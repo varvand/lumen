@@ -136,6 +136,7 @@
   class:mac-titlebar={macTitlebar}
   class:sidebar-collapsed={ui.sidebarCollapsed}
   class:list-collapsed={ui.listCollapsed}
+  class:colorful-tags={preferences.colorfulTags}
   data-theme={preferences.active.dark ? 'dark' : 'light'}
   data-reader={preferences.readerFont}
   style={`--reader-size: ${preferences.fontSize}px; --ui-scale: ${preferences.uiScale}; ${themeStyle(preferences.active)}`}

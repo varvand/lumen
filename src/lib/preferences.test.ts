@@ -145,4 +145,12 @@ describe('preferences', () => {
     preferences.load();
     expect(preferences.uiScale).toBe(1.15);
   });
+
+  it('keeps colorful tags off by default and remembers the choice', () => {
+    expect(preferences.colorfulTags).toBe(false);
+    preferences.set({ colorfulTags: true });
+    expect(stored().colorfulTags).toBe(true);
+    preferences.load();
+    expect(preferences.colorfulTags).toBe(true);
+  });
 });

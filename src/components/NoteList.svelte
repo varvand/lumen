@@ -13,7 +13,7 @@
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { excerpt } from '../lib/markdown';
-  import { dateLabel } from '../lib/format';
+  import { dateLabel, tagHue } from '../lib/format';
 
   const empty = $derived(
     ui.query
@@ -105,7 +105,8 @@
           <h2>{note.title || 'Untitled note'}</h2>
           <p>{excerpt(note.body) || 'A fresh page. Start writing…'}</p>
           <div class="note-item-bottom">
-            {#if note.tags[0]}<span class="list-tag"># {note.tags[0]}</span
+            {#if note.tags[0]}<span class="list-tag note-tag" style:--tag-hue={tagHue(note.tags[0])}
+                ># {note.tags[0]}</span
               >{/if}{#if note.intent !== 'reference'}<span class="learning-indicator"
                 ><Brain size={12} />{note.prompts.length}</span
               >{/if}

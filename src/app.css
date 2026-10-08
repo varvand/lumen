@@ -813,6 +813,14 @@ button:disabled:hover {
   font-size: var(--text-xs);
   line-height: 1.2;
 }
+.colorful-tags .note-tag {
+  --tag-color: oklch(0.62 0.14 var(--tag-hue));
+  color: color-mix(in oklch, var(--tag-color) 80%, var(--text));
+}
+.colorful-tags .tag.note-tag {
+  background: color-mix(in oklch, var(--tag-color) 14%, var(--surface));
+  border-color: color-mix(in oklch, var(--tag-color) 35%, var(--border));
+}
 .intent-label {
   display: inline-flex;
   align-items: center;
@@ -1654,6 +1662,12 @@ dialog::backdrop {
 .setting-row input[type='range'] {
   accent-color: var(--accent);
   width: 150px;
+  margin-left: auto;
+}
+.setting-row input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
   margin-left: auto;
 }
 .setting-row span:not(.setting-label):not(.select-value) {
