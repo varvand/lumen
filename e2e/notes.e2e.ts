@@ -209,3 +209,17 @@ test('scales interface text without changing document text', async ({ page }) =>
   await expect.poll(() => size('.main-nav button')).toBeCloseTo(nav * 1.25, 1);
   expect(await size('.prose p')).toBe(prose);
 });
+
+test('previews the math under the cursor', async ({ page }) => {
+  await page.getByRole('button', { name: 'New note' }).click();
+  const editor = page.getByRole('textbox', { name: 'Markdown editor' });
+  await editor.click();
+  const preview = page.locator('.cm-math-preview');
+  await page.keyboard.type('Energy $E = mc^2$');
+  await expect(preview.locator('.katex')).toBeVisible();
+  await page.keyboard.type(' is famous.');
+  await expect(preview).toHaveCount(0);
+
+  await page.keyboard.type(' $\\frac{1}{$');
+  await expect(preview).toHaveClass(/cm-math-error/);
+});

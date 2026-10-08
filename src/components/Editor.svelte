@@ -13,6 +13,7 @@
   import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
   import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
   import { tags } from '@lezer/highlight';
+  import { mathPreview } from '../lib/math';
 
   let { value, onchange }: { value: string; onchange: (text: string) => void } = $props();
   let element: HTMLDivElement;
@@ -42,6 +43,7 @@
           drawSelection(),
           highlightActiveLine(),
           highlightSelectionMatches(),
+          mathPreview(),
           placeholder(
             'An idea starts here…\n\nWrite in Markdown. Use $…$ for inline math and $$…$$ for equations.',
           ),
@@ -102,6 +104,22 @@
               border: '1px solid var(--border)',
             },
             '.cm-search': { padding: '10px', fontFamily: '"DM Sans Variable", sans-serif' },
+            '.cm-tooltip.cm-math-preview': {
+              padding: '8px 12px',
+              maxWidth: 'min(560px, 90vw)',
+              overflowX: 'auto',
+              color: 'var(--text)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              boxShadow: 'var(--shadow)',
+            },
+            '.cm-math-preview .katex-display': { margin: '0' },
+            '.cm-tooltip.cm-math-error': {
+              color: 'var(--muted)',
+              fontFamily: '"DM Sans Variable", sans-serif',
+              fontSize: '12px',
+            },
           }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
