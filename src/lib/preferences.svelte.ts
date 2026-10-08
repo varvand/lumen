@@ -18,6 +18,8 @@ class Preferences {
   uiScale = $state(1);
   /** Give each tag its own color instead of the neutral tag style. */
   colorfulTags = $state(false);
+  /** Render Markdown in the editor, showing the source only on the lines being edited. */
+  livePreview = $state(true);
   /** A theme being edited, shown live without being saved. */
   preview = $state<ThemeDefinition | null>(null);
   prefersDark = $state(false);
@@ -41,6 +43,7 @@ class Preferences {
         typeof prefs.fontSize === 'number' ? Math.min(22, Math.max(14, prefs.fontSize)) : 17;
       this.uiScale = typeof prefs.uiScale === 'number' ? clampScale(prefs.uiScale) : 1;
       this.colorfulTags = prefs.colorfulTags === true;
+      this.livePreview = prefs.livePreview !== false;
     } catch {
       /* Ignore invalid visual preferences, never library data. */
     }
@@ -49,16 +52,30 @@ class Preferences {
     patch: Partial<
       Pick<
         Preferences,
-        'theme' | 'readerFont' | 'fontSize' | 'uiScale' | 'colorfulTags' | 'customThemes'
+        | 'theme'
+        | 'readerFont'
+        | 'fontSize'
+        | 'uiScale'
+        | 'colorfulTags'
+        | 'livePreview'
+        | 'customThemes'
       >
     >,
   ) {
     Object.assign(this, patch);
     if (patch.uiScale !== undefined) this.uiScale = clampScale(patch.uiScale);
-    const { theme, readerFont, fontSize, uiScale, colorfulTags, customThemes } = this;
+    const { theme, readerFont, fontSize, uiScale, colorfulTags, livePreview, customThemes } = this;
     localStorage.setItem(
       KEY,
-      JSON.stringify({ theme, readerFont, fontSize, uiScale, colorfulTags, customThemes }),
+      JSON.stringify({
+        theme,
+        readerFont,
+        fontSize,
+        uiScale,
+        colorfulTags,
+        livePreview,
+        customThemes,
+      }),
     );
   }
   /** Grow or shrink interface text by one step; 0 resets it. */

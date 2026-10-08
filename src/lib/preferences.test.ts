@@ -153,4 +153,12 @@ describe('preferences', () => {
     preferences.load();
     expect(preferences.colorfulTags).toBe(true);
   });
+
+  it('keeps live preview on by default and remembers turning it off', () => {
+    expect(preferences.livePreview).toBe(true);
+    preferences.set({ livePreview: false });
+    expect(stored().livePreview).toBe(false);
+    preferences.load();
+    expect(preferences.livePreview).toBe(false);
+  });
 });

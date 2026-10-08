@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { EditorState } from '@codemirror/state';
+  import { Compartment, EditorState } from '@codemirror/state';
   import {
     EditorView,
     keymap,
@@ -8,11 +8,13 @@
     drawSelection,
     highlightActiveLine,
   } from '@codemirror/view';
-  import { markdown } from '@codemirror/lang-markdown';
+  import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
   import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
   import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
   import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
   import { tags } from '@lezer/highlight';
+  import { livePreview } from '../lib/livePreview';
+  import { preferences } from '../lib/preferences.svelte';
   import { mathPreview } from '../lib/math';
 
   let { value, onchange }: { value: string; onchange: (text: string) => void } = $props();
@@ -20,6 +22,7 @@
   let view: EditorView | undefined;
   let internal = '';
   let syncing = false;
+  const preview = new Compartment();
 
   export function format(before: string, after = before, fallback = 'text') {
     if (!view) return;
@@ -38,7 +41,8 @@
       state: EditorState.create({
         doc: value,
         extensions: [
-          markdown(),
+          markdown({ base: markdownLanguage }),
+          preview.of(preferences.livePreview ? livePreview() : []),
           history(),
           drawSelection(),
           highlightActiveLine(),
@@ -131,6 +135,10 @@
       }),
     });
     return () => view?.destroy();
+  });
+  $effect(() => {
+    const enabled = preferences.livePreview;
+    view?.dispatch({ effects: preview.reconfigure(enabled ? livePreview() : []) });
   });
   $effect(() => {
     if (view && value !== internal) {
