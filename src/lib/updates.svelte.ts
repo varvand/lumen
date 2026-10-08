@@ -5,8 +5,8 @@ import { native } from './storage';
 const CHECK_EVERY = 6 * 60 * 60 * 1000;
 
 interface Release {
+  /** CI builds of main are numbered <major>.<minor>.<run number>. */
   version: string;
-  build: number;
   notes?: string | null;
 }
 type Progress =
@@ -14,8 +14,8 @@ type Progress =
   | { event: 'progress'; downloaded: number }
   | { event: 'installing' };
 
-export function formatRelease({ version, build }: Release) {
-  return build ? `${version} (build ${build})` : version;
+export function formatRelease({ version }: Release) {
+  return version;
 }
 
 /**

@@ -1,25 +1,11 @@
 //! Over-the-air updates from the rolling `main-latest` GitHub release.
 //!
-//! Every CI build of main keeps the version from tauri.conf.json and stamps its workflow run
-//! number into the binary as `LUMEN_BUILD`. The release manifest (latest.json) carries the
-//! same number as semver build metadata, e.g. `0.1.0+42`, so two builds of one version are
-//! still ordered.
-
-/// The CI run number this binary was built from, or 0 for local builds.
-pub fn build_number() -> u64 {
-    option_env!("LUMEN_BUILD")
-        .and_then(|b| b.parse().ok())
-        .unwrap_or(0)
-}
-
-/// Whether a release (major, minor, patch, build) is newer than the running one.
-pub fn is_newer(current: (u64, u64, u64, u64), remote: (u64, u64, u64, u64)) -> bool {
-    remote > current
-}
+//! CI versions every build of main `<major>.<minor>.<run number>` (see
+//! scripts/release-macos.sh), so the updater's default semver comparison orders them, and the
+//! version recorded in each update signature equals the one latest.json announces.
 
 #[cfg(feature = "desktop")]
 pub mod commands {
-    use super::{build_number, is_newer};
     use serde::Serialize;
     use std::sync::Mutex;
     use tauri::ipc::Channel;
@@ -35,13 +21,11 @@ pub mod commands {
     #[derive(Serialize)]
     pub struct AppVersion {
         version: String,
-        build: u64,
     }
 
     #[derive(Serialize)]
     pub struct UpdateInfo {
         version: String,
-        build: u64,
         notes: Option<String>,
     }
 
@@ -53,15 +37,10 @@ pub mod commands {
         Installing,
     }
 
-    fn build_of(build: &str) -> u64 {
-        build.parse().unwrap_or(0)
-    }
-
     #[tauri::command]
     pub fn app_version(app: AppHandle) -> AppVersion {
         AppVersion {
             version: app.package_info().version.to_string(),
-            build: build_number(),
         }
     }
 
@@ -70,33 +49,15 @@ pub mod commands {
         app: AppHandle,
         pending: State<'_, Pending>,
     ) -> Result<Option<UpdateInfo>> {
-        let local = build_number();
         let update = app
-            .updater_builder()
-            .version_comparator(move |current, remote| {
-                let remote = remote.version;
-                is_newer(
-                    (current.major, current.minor, current.patch, local),
-                    (
-                        remote.major,
-                        remote.minor,
-                        remote.patch,
-                        build_of(remote.build.as_str()),
-                    ),
-                )
-            })
-            .build()
+            .updater()
             .map_err(|e| e.to_string())?
             .check()
             .await
             .map_err(|e| format!("Could not check for updates: {e}"))?;
-        let info = update.as_ref().map(|u| {
-            let (version, build) = u.version.split_once('+').unwrap_or((&u.version, "0"));
-            UpdateInfo {
-                version: version.to_string(),
-                build: build_of(build),
-                notes: u.body.clone(),
-            }
+        let info = update.as_ref().map(|u| UpdateInfo {
+            version: u.version.clone(),
+            notes: u.body.clone(),
         });
         *pending.0.lock().map_err(|e| e.to_string())? = update;
         Ok(info)
@@ -134,21 +95,5 @@ pub mod commands {
             .await
             .map_err(|e| format!("The update could not be installed: {e}"))?;
         app.restart();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::is_newer;
-
-    #[test]
-    fn orders_versions_then_builds() {
-        assert!(is_newer((0, 1, 0, 41), (0, 1, 0, 42)));
-        assert!(!is_newer((0, 1, 0, 42), (0, 1, 0, 42)));
-        assert!(!is_newer((0, 1, 0, 43), (0, 1, 0, 42)));
-        assert!(is_newer((0, 1, 0, 99), (0, 2, 0, 1)));
-        assert!(!is_newer((0, 2, 0, 0), (0, 1, 9, 500)));
-        // A local build (0) is behind any CI build of the same version.
-        assert!(is_newer((0, 1, 0, 0), (0, 1, 0, 1)));
     }
 }
