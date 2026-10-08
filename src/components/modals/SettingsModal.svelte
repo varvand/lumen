@@ -74,6 +74,14 @@
           >{/if}
       </div>
     {/if}
+    <label class="setting-row"
+      >Color each tag<input
+        type="checkbox"
+        role="switch"
+        checked={preferences.colorfulTags}
+        onchange={(e) => preferences.set({ colorfulTags: e.currentTarget.checked })}
+      /></label
+    >
   </div>
   <div class="settings-section">
     <h3>Text</h3>

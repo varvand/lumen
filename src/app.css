@@ -509,8 +509,22 @@ button:disabled:hover {
   right: 13px;
   bottom: -3px;
   height: 1px;
-  background: var(--border);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border) 22%,
+    var(--border) 78%,
+    transparent
+  );
   pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+/* Cards that stand out need no rule above or below them. */
+.note-item.selected::after,
+.note-item:hover::after,
+.note-item:has(+ .note-item.selected)::after,
+.note-item:has(+ .note-item:hover)::after {
+  opacity: 0;
 }
 .note-item:hover {
   background: var(--hover);
@@ -798,6 +812,14 @@ button:disabled:hover {
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
   line-height: 1.2;
+}
+.colorful-tags .note-tag {
+  --tag-color: oklch(0.62 0.14 var(--tag-hue));
+  color: color-mix(in oklch, var(--tag-color) 80%, var(--text));
+}
+.colorful-tags .tag.note-tag {
+  background: color-mix(in oklch, var(--tag-color) 14%, var(--surface));
+  border-color: color-mix(in oklch, var(--tag-color) 35%, var(--border));
 }
 .intent-label {
   display: inline-flex;
@@ -1640,6 +1662,12 @@ dialog::backdrop {
 .setting-row input[type='range'] {
   accent-color: var(--accent);
   width: 150px;
+  margin-left: auto;
+}
+.setting-row input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
   margin-left: auto;
 }
 .setting-row span:not(.setting-label):not(.select-value) {

@@ -16,6 +16,8 @@ class Preferences {
   readerFont = $state<ReaderFont>('serif');
   fontSize = $state(17);
   uiScale = $state(1);
+  /** Give each tag its own color instead of the neutral tag style. */
+  colorfulTags = $state(false);
   /** A theme being edited, shown live without being saved. */
   preview = $state<ThemeDefinition | null>(null);
   prefersDark = $state(false);
@@ -38,21 +40,25 @@ class Preferences {
       this.fontSize =
         typeof prefs.fontSize === 'number' ? Math.min(22, Math.max(14, prefs.fontSize)) : 17;
       this.uiScale = typeof prefs.uiScale === 'number' ? clampScale(prefs.uiScale) : 1;
+      this.colorfulTags = prefs.colorfulTags === true;
     } catch {
       /* Ignore invalid visual preferences, never library data. */
     }
   }
   set(
     patch: Partial<
-      Pick<Preferences, 'theme' | 'readerFont' | 'fontSize' | 'uiScale' | 'customThemes'>
+      Pick<
+        Preferences,
+        'theme' | 'readerFont' | 'fontSize' | 'uiScale' | 'colorfulTags' | 'customThemes'
+      >
     >,
   ) {
     Object.assign(this, patch);
     if (patch.uiScale !== undefined) this.uiScale = clampScale(patch.uiScale);
-    const { theme, readerFont, fontSize, uiScale, customThemes } = this;
+    const { theme, readerFont, fontSize, uiScale, colorfulTags, customThemes } = this;
     localStorage.setItem(
       KEY,
-      JSON.stringify({ theme, readerFont, fontSize, uiScale, customThemes }),
+      JSON.stringify({ theme, readerFont, fontSize, uiScale, colorfulTags, customThemes }),
     );
   }
   /** Grow or shrink interface text by one step; 0 resets it. */
