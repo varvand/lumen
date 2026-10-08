@@ -88,7 +88,10 @@
             aria-label={folder.path}
             aria-current={active ? 'page' : undefined}
             title={folder.path}
-            onclick={() => ui.browse('library', folder.path)}
+            onclick={() => {
+              if (folder.children.length) ui.setExpanded(`folder:${folder.path}`, !expanded);
+              void ui.browse('library', folder.path);
+            }}
           >
             {#if active}<FolderOpen size={16} />{:else}<FolderSimple size={16} />{/if}
             <span class="folder-label">{folder.name}</span><span

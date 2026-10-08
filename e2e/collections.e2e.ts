@@ -52,14 +52,21 @@ test('creates nested folders, keeps new notes scoped, and browses all descendant
     list.getByRole('heading', { name: 'Physics / Waves / Interference', exact: true }),
   ).toBeVisible();
   await expect(list.getByText('2 notes', { exact: true })).toBeVisible();
-  await nav.getByRole('button', { name: 'Physics', exact: true }).click();
+  // Clicking a folder opens it and toggles its subfolders.
+  const physics = nav.getByRole('button', { name: 'Physics', exact: true });
+  const waves = nav.getByRole('button', { name: 'Physics / Waves', exact: true });
+  await physics.click();
   await expect(list.getByText('3 notes', { exact: true })).toBeVisible();
-  await nav.getByRole('button', { name: 'Physics / Waves', exact: true }).click();
+  await expect(waves).toBeHidden();
+  await physics.click();
+  await expect(waves).toBeVisible();
+  await waves.click();
   await page.getByRole('button', { name: 'New note', exact: true }).click();
   await expect(page.getByRole('combobox', { name: 'Collection', exact: true })).toHaveValue(
     'Physics / Waves',
   );
   await page.reload();
+  await nav.getByRole('button', { name: 'Expand Physics / Waves', exact: true }).click();
   await expect(
     nav.getByRole('button', { name: 'Physics / Waves / Interference', exact: true }),
   ).toBeVisible();
