@@ -493,6 +493,7 @@ button:disabled:hover {
   padding: 10px;
 }
 .note-item {
+  position: relative;
   width: 100%;
   padding: 16px 13px 13px;
   text-align: left;
@@ -500,6 +501,16 @@ button:disabled:hover {
   border: 1px solid transparent;
   margin-bottom: 5px;
   display: block;
+}
+.note-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  bottom: -3px;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
 }
 .note-item:hover {
   background: var(--hover);
