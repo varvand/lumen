@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { ArrowUpRight, FolderSimple, PencilSimple, Plus } from 'phosphor-svelte';
+  import { ArrowUpRight, DownloadSimple, FolderSimple, PencilSimple, Plus } from 'phosphor-svelte';
   import Modal from '../Modal.svelte';
   import ThemeEditor from '../ThemeEditor.svelte';
   import ChatAppsSettings from '../ChatAppsSettings.svelte';
   import { library } from '../../lib/library.svelte';
-  import { preferences, type ReaderFont } from '../../lib/preferences.svelte';
+  import { preferences, UI_SCALE, type ReaderFont } from '../../lib/preferences.svelte';
   import { BUILTIN_THEMES, newThemeId, type ThemeDefinition } from '../../lib/themes';
   import { ui } from '../../lib/ui.svelte';
   import { native } from '../../lib/storage';
@@ -38,7 +38,7 @@
   >
 {/snippet}
 
-<Modal title="Make yourself at home" onclose={() => ui.close()}
+<Modal title="Settings" onclose={() => ui.close()}
   ><div class="settings-section">
     <h3>Appearance</h3>
     {#if editing}
@@ -75,7 +75,7 @@
     {/if}
   </div>
   <div class="settings-section">
-    <h3>Reading</h3>
+    <h3>Text</h3>
     <label class="setting-row"
       >Document typeface<select
         class="select-input"
@@ -86,7 +86,17 @@
         ></select
       ></label
     ><label class="setting-row"
-      >Text size <span>{preferences.fontSize}px</span><input
+      >Interface text <span>{Math.round(preferences.uiScale * 100)}% · ⌘+ ⌘− ⌘0</span><input
+        aria-label="Interface text size"
+        type="range"
+        min={UI_SCALE.min}
+        max={UI_SCALE.max}
+        step={UI_SCALE.step}
+        value={preferences.uiScale}
+        oninput={(e) => preferences.set({ uiScale: Number(e.currentTarget.value) })}
+      /></label
+    ><label class="setting-row"
+      >Document text <span>{preferences.fontSize}px</span><input
         aria-label="Reading text size"
         type="range"
         min="14"
@@ -104,11 +114,15 @@
         ? 'Notes are plain .md files. Review history and note details live in SQLite alongside them. Back up the entire library folder to preserve both.'
         : 'This preview uses browser storage. The desktop app saves Markdown files and review history to your computer. Export important notes before clearing browser data.'}
     </p>
-    {#if native}<button class="secondary-button" onclick={openFolder}
-        ><FolderSimple size={16} />Open library folder</button
-      >{/if}
+    <div class="library-actions">
+      {#if native}<button class="secondary-button" onclick={openFolder}
+          ><FolderSimple size={16} />Open library folder</button
+        >{/if}<button class="secondary-button" onclick={() => ui.open('obsidian')}
+        ><DownloadSimple size={16} />Import Obsidian vault</button
+      >
+    </div>
   </div>
-  {#if native}<ChatAppsSettings />{/if}
+  <ChatAppsSettings />
   {#if updates.enabled}<div class="settings-section">
       <h3>Updates</h3>
       <div class="setting-row">

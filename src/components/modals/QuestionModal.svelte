@@ -33,9 +33,7 @@
   }
 </script>
 
-<Modal
-  title={existing ? 'Edit practice question' : 'A question worth asking'}
-  onclose={() => ui.close()}
+<Modal title={existing ? 'Edit question' : 'New question'} onclose={() => ui.close()}
   ><label class="form-field"
     >Activity<select class="select-input" bind:value={draft.kind}
       ><option value="recall">Recall · reconstruct the idea</option><option value="explain"
