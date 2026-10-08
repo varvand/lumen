@@ -3,10 +3,11 @@ import { parseImport } from './markdown';
 import { storage } from './storage';
 import type { Note, Prompt, Screen } from './types';
 
-export type Modal = 'capture' | 'settings' | 'search' | 'question' | null;
+export type Modal = 'capture' | 'settings' | 'search' | 'question' | 'obsidian' | null;
 export type EditorMode = 'write' | 'split' | 'read';
 
 const SIDEBAR_KEY = 'lumen.sidebarCollapsed';
+const LIST_KEY = 'lumen.listCollapsed';
 function storedFlag(key: string) {
   try {
     return localStorage.getItem(key) === 'true';
@@ -36,6 +37,8 @@ class Workspace {
   panel = $state(true);
   /** The left sidebar shows as an icon rail; remembered per device. */
   sidebarCollapsed = $state(storedFlag(SIDEBAR_KEY));
+  /** The note list column is hidden, leaving more room for the open note. */
+  listCollapsed = $state(storedFlag(LIST_KEY));
   focus = $state(false);
   mobileNav = $state(false);
   modal = $state<Modal>(null);
@@ -82,6 +85,19 @@ class Workspace {
     } catch {
       /* The layout still toggles; it just is not remembered. */
     }
+  }
+  toggleList(collapsed = !this.listCollapsed) {
+    this.listCollapsed = collapsed;
+    try {
+      localStorage.setItem(LIST_KEY, String(collapsed));
+    } catch {
+      /* The layout still toggles; it just is not remembered. */
+    }
+  }
+  /** Open a list the user picked, showing the note list if it was hidden. */
+  browse(next: Screen, collection = '') {
+    if (next !== 'practice' && this.listCollapsed) this.toggleList(false);
+    return this.navigate(next, collection);
   }
   open(modal: Modal) {
     this.modal = modal;

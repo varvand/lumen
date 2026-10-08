@@ -9,9 +9,15 @@
     wide = false,
   }: { title: string; onclose: () => void; children: Snippet; wide?: boolean } = $props();
   let dialog: HTMLDialogElement;
+  // Closing on unmount queues a close event that arrives after the next dialog has opened;
+  // it must not close that one.
+  let unmounted = false;
   onMount(() => {
     dialog.showModal();
-    return () => dialog.close();
+    return () => {
+      unmounted = true;
+      dialog.close();
+    };
   });
 </script>
 
@@ -19,7 +25,9 @@
 <dialog
   bind:this={dialog}
   class:wide
-  {onclose}
+  onclose={() => {
+    if (!unmounted) onclose();
+  }}
   onclick={(e) => {
     if (e.target === dialog) onclose();
   }}

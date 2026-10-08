@@ -128,4 +128,21 @@ describe('preferences', () => {
     preferences.preview = null;
     expect(preferences.active).toBe(light);
   });
+
+  it('keeps the interface text scale within bounds and remembers it', () => {
+    expect(preferences.uiScale).toBe(1);
+    preferences.stepUiScale(1);
+    expect(preferences.uiScale).toBe(1.05);
+    preferences.set({ uiScale: 9 });
+    expect(preferences.uiScale).toBe(1.3);
+    preferences.stepUiScale(1);
+    expect(preferences.uiScale).toBe(1.3);
+    preferences.set({ uiScale: 0.1 });
+    expect(preferences.uiScale).toBe(0.85);
+    preferences.stepUiScale(0);
+    expect(preferences.uiScale).toBe(1);
+    preferences.set({ uiScale: 1.15 });
+    preferences.load();
+    expect(preferences.uiScale).toBe(1.15);
+  });
 });
