@@ -108,9 +108,9 @@
             '&.cm-focused': { outline: 'none' },
             '.cm-line': { padding: '0' },
             '.cm-activeLine': { backgroundColor: 'transparent' },
-            '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
-              backgroundColor: 'var(--selection)',
-            },
+            // Matches CodeMirror's own focused-selection selector so the theme color wins.
+            '.cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, ::selection':
+              { backgroundColor: 'var(--selection)' },
             '.cm-cursor': { borderLeftColor: 'var(--accent)' },
             '.cm-placeholder': { color: 'var(--muted)' },
             '.cm-panels': {
