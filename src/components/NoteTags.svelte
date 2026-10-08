@@ -62,7 +62,7 @@
     title="Edit tags: #tag1 #tag2 #tag3"
     onclick={edit}
   >
-    {#each note.tags as tag}<span class="tag">#{tag}</span>{/each}
+    {#each note.tags as tag}<span class="tag">{tag}</span>{/each}
     <span class="add-tags"><Plus size={12} />Add tags</span>
   </button>
 {/if}

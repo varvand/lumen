@@ -509,8 +509,22 @@ button:disabled:hover {
   right: 13px;
   bottom: -3px;
   height: 1px;
-  background: var(--border);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border) 22%,
+    var(--border) 78%,
+    transparent
+  );
   pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+/* Cards that stand out need no rule above or below them. */
+.note-item.selected::after,
+.note-item:hover::after,
+.note-item:has(+ .note-item.selected)::after,
+.note-item:has(+ .note-item:hover)::after {
+  opacity: 0;
 }
 .note-item:hover {
   background: var(--hover);

@@ -56,7 +56,7 @@ test('edits hashtag tags in the note header and persists them', async ({ page })
   await tags.press('Enter');
   const headerTags = page.getByRole('button', { name: 'Edit tags', exact: true });
   await expect(headerTags).toBeFocused();
-  await expect(headerTags.locator('.tag')).toHaveText(['#tag1', '#tag2', '#tag3', '#tag4']);
+  await expect(headerTags.locator('.tag')).toHaveText(['tag1', 'tag2', 'tag3', 'tag4']);
 
   await page.getByRole('button', { name: 'Toggle note details' }).click();
   const detailsTags = page.getByRole('textbox', { name: 'Tags', exact: true });
@@ -67,7 +67,7 @@ test('edits hashtag tags in the note header and persists them', async ({ page })
     .getByRole('region', { name: 'Note library' })
     .getByRole('heading', { name: 'Tagged note' })
     .click();
-  await expect(headerTags.locator('.tag')).toHaveText(['#tag1', '#tag2', '#tag3', '#tag4']);
+  await expect(headerTags.locator('.tag')).toHaveText(['tag1', 'tag2', 'tag3', 'tag4']);
 
   await headerTags.click();
   await expect(tags).toHaveValue('#tag1 #tag2 #tag3 #tag4');
@@ -80,14 +80,14 @@ test('edits hashtag tags in the note header and persists them', async ({ page })
   await tags.fill('#updated #nested/tag');
   const list = page.getByRole('region', { name: 'Note library' });
   await list.getByRole('heading', { name: 'A little clearer, every day.' }).click();
-  await expect(headerTags.locator('.tag')).toHaveText(['#welcome']);
+  await expect(headerTags.locator('.tag')).toHaveText(['welcome']);
   await list.getByRole('heading', { name: 'Tagged note' }).click();
   await expect(detailsTags).toHaveValue('updated, nested/tag');
 
   // Changes in the details panel are also reflected in the header.
   await detailsTags.fill('from-details');
   await detailsTags.press('Tab');
-  await expect(headerTags.locator('.tag')).toHaveText(['#from-details']);
+  await expect(headerTags.locator('.tag')).toHaveText(['from-details']);
   await headerTags.click();
   await tags.fill('');
   await tags.press('Enter');
