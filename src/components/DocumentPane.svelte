@@ -151,8 +151,9 @@
           class="icon-button"
           class:pressed={ui.panel}
           aria-label="Toggle note details"
+          aria-expanded={ui.panel}
           title="Note details & learning"
-          onclick={() => (ui.panel = !ui.panel)}><SidebarSimple size={19} /></button
+          onclick={() => ui.togglePanel()}><SidebarSimple size={19} /></button
         >{/if}
     </div>
   </header>

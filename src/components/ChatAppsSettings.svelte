@@ -53,12 +53,22 @@
       ><Copy size={15} />Copy summary prompt</button
     >
   </div>
-  <details class="chat-app-details">
-    <summary>View prompt</summary>
+  <details class="chat-app-details" open={ui.isExpanded('settings:prompt', false)}>
+    <summary
+      onclick={(e) => {
+        e.preventDefault();
+        ui.setExpanded('settings:prompt', !ui.isExpanded('settings:prompt', false));
+      }}>View prompt</summary
+    >
     <pre class="prompt-copy">{capturePrompt}</pre>
   </details>
-  <details class="chat-app-details">
-    <summary>Advanced: connect the save tool</summary>
+  <details class="chat-app-details" open={ui.isExpanded('settings:connection', false)}>
+    <summary
+      onclick={(e) => {
+        e.preventDefault();
+        ui.setExpanded('settings:connection', !ui.isExpanded('settings:connection', false));
+      }}>Advanced: connect the save tool</summary
+    >
     <p class="helper">
       The included <code>lumen-mcp</code> companion exposes a <code>save_note</code> tool. For Codex,
       connect its stdio transport; for ChatGPT, bridge it with a private MCP tunnel (see docs/chatgpt.md).

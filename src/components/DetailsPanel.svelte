@@ -24,7 +24,7 @@
     <span>IN THIS NOTE</span><button
       class="icon-button small"
       aria-label="Close note details"
-      onclick={() => (ui.panel = false)}><X size={13} /></button
+      onclick={() => ui.togglePanel(false)}><X size={13} /></button
     >
   </div>
   <nav class="outline" aria-label="Document outline">

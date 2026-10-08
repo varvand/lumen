@@ -100,7 +100,7 @@ test('names a new collection in place', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Collection name' }).fill('Chemistry');
   await page.keyboard.press('Enter');
   const collections = page.getByRole('navigation', { name: 'Collections' });
-  await expect(collections.getByRole('button', { name: 'Chemistry' })).toBeVisible();
+  await expect(collections.getByRole('button', { name: 'Chemistry', exact: true })).toBeVisible();
   const list = page.getByRole('region', { name: 'Note library' });
   await expect(list.getByRole('heading', { name: 'Chemistry' })).toBeVisible();
   await expect(list.getByText('1 note', { exact: true })).toBeVisible();
@@ -110,7 +110,7 @@ test('names a new collection in place', async ({ page }) => {
   await page.keyboard.type('Draft');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('textbox', { name: 'Collection name' })).toBeHidden();
-  await expect(collections.getByRole('button')).toHaveCount(3);
+  await expect(collections.locator('.folder-link')).toHaveCount(3);
 });
 
 test('captures pasted Markdown to the inbox', async ({ page }) => {

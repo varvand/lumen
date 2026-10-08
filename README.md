@@ -69,6 +69,8 @@ Install from the DMG into Applications before updating. An app run directly from
 - Recall, explanation, and application questions with hidden suggested answers, self-assessed attempts, and adaptive review dates.
 - A Rust stdio MCP companion that saves on-demand summaries from an existing ChatGPT/Codex conversation. See [connection setup](docs/chatgpt.md).
 
+Collections can contain subfolders. Hover a folder and click its plus button to add one, or enter a path such as `Physics / Waves` when creating a collection. Parent folders include their descendants' notes; new notes stay in the folder you're viewing. Each new collection starts with a blank note. The sidebar, note list, details panel, and folder disclosure states are remembered on this device. In the collapsed sidebar, one Collections button opens the folder tree.
+
 ## Data
 
 Default desktop locations:
