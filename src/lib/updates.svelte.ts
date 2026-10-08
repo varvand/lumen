@@ -72,11 +72,13 @@ class Updates {
       await library.flush();
       await invoke('install_update', { onProgress: channel });
     } catch (e) {
-      this.status = 'error';
-      this.error = String(e);
-      // The pending update was consumed; look again so the button can retry.
+      const message = String(e);
+      // The pending update was consumed; look again so the button can retry. The check
+      // clears the error, so restore the install failure afterwards.
+      this.status = 'idle';
       await this.check(true);
       this.status = 'error';
+      this.error = message;
     }
   }
 }
