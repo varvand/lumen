@@ -24,6 +24,7 @@
   import Markdown from './Markdown.svelte';
   import FormatToolbar from './FormatToolbar.svelte';
   import DetailsPanel from './DetailsPanel.svelte';
+  import NoteTags from './NoteTags.svelte';
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { words } from '../lib/markdown';
@@ -200,7 +201,7 @@
                 ><Brain size={12} />{active.intent === 'apply'
                   ? 'Learning to apply'
                   : 'Learning to remember'}</span
-              >{/if}{#each active.tags.slice(0, 3) as tag}<span class="tag">{tag}</span>{/each}
+              >{/if}{#key active.id}<NoteTags note={active} />{/key}
           </div>
         </div>
         {#if ui.mode !== 'read'}<FormatToolbar {editor} />{/if}

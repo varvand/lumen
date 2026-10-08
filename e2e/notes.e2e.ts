@@ -45,6 +45,56 @@ test('pins and trashes a note from the actions menu', async ({ page }) => {
   await expect(list.getByText('2 notes')).toBeVisible();
 });
 
+test('edits hashtag tags in the note header and persists them', async ({ page }) => {
+  await page.getByRole('button', { name: 'New note' }).click();
+  await page.getByRole('textbox', { name: 'Note title' }).fill('Tagged note');
+  await page.getByRole('button', { name: 'Close note details' }).click();
+  await page.getByRole('button', { name: 'Add tags', exact: true }).click();
+  const tags = page.getByRole('textbox', { name: 'Note tags', exact: true });
+  await expect(tags).toBeFocused();
+  await tags.fill('#tag1 #tag2 #tag3 #tag4 #tag1 #');
+  await tags.press('Enter');
+  const headerTags = page.getByRole('button', { name: 'Edit tags', exact: true });
+  await expect(headerTags).toBeFocused();
+  await expect(headerTags.locator('.tag')).toHaveText(['#tag1', '#tag2', '#tag3', '#tag4']);
+
+  await page.getByRole('button', { name: 'Toggle note details' }).click();
+  const detailsTags = page.getByRole('textbox', { name: 'Tags', exact: true });
+  await expect(detailsTags).toHaveValue('tag1, tag2, tag3, tag4');
+  await expect(page.getByText(/^(Saving…|Unsaved changes)$/)).toHaveCount(0);
+  await page.reload();
+  await page
+    .getByRole('region', { name: 'Note library' })
+    .getByRole('heading', { name: 'Tagged note' })
+    .click();
+  await expect(headerTags.locator('.tag')).toHaveText(['#tag1', '#tag2', '#tag3', '#tag4']);
+
+  await headerTags.click();
+  await expect(tags).toHaveValue('#tag1 #tag2 #tag3 #tag4');
+  await tags.fill('#cancelled');
+  await tags.press('Escape');
+  await expect(detailsTags).toHaveValue('tag1, tag2, tag3, tag4');
+
+  // Clicking another note saves the draft to the note it belongs to.
+  await headerTags.click();
+  await tags.fill('#updated #nested/tag');
+  const list = page.getByRole('region', { name: 'Note library' });
+  await list.getByRole('heading', { name: 'A little clearer, every day.' }).click();
+  await expect(headerTags.locator('.tag')).toHaveText(['#welcome']);
+  await list.getByRole('heading', { name: 'Tagged note' }).click();
+  await expect(detailsTags).toHaveValue('updated, nested/tag');
+
+  // Changes in the details panel are also reflected in the header.
+  await detailsTags.fill('from-details');
+  await detailsTags.press('Tab');
+  await expect(headerTags.locator('.tag')).toHaveText(['#from-details']);
+  await headerTags.click();
+  await tags.fill('');
+  await tags.press('Enter');
+  await expect(page.getByRole('button', { name: 'Add tags', exact: true })).toBeVisible();
+  await expect(detailsTags).toHaveValue('');
+});
+
 test('names a new collection in place', async ({ page }) => {
   await page.getByRole('button', { name: 'New collection' }).click();
   await page.getByRole('textbox', { name: 'Collection name' }).fill('Chemistry');
