@@ -5,6 +5,7 @@
   import NoteList from './components/NoteList.svelte';
   import DocumentPane from './components/DocumentPane.svelte';
   import Practice from './components/Practice.svelte';
+  import GraphView from './components/GraphView.svelte';
   import SearchModal from './components/modals/SearchModal.svelte';
   import CaptureModal from './components/modals/CaptureModal.svelte';
   import SettingsModal from './components/modals/SettingsModal.svelte';
@@ -156,6 +157,8 @@
         onback={() => ui.navigate('library')}
       />
     </main>
+  {:else if ui.screen === 'graph'}
+    <main class="practice-container"><GraphView /></main>
   {:else}
     <NoteList />
     <DocumentPane />

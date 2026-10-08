@@ -116,6 +116,14 @@
         oninput={(e) => preferences.set({ fontSize: Number(e.currentTarget.value) })}
       /></label
     >
+    <label class="setting-row"
+      >Live preview while writing<input
+        type="checkbox"
+        role="switch"
+        checked={preferences.livePreview}
+        onchange={(e) => preferences.set({ livePreview: e.currentTarget.checked })}
+      /></label
+    >
   </div>
   <div class="settings-section">
     <h3>Your library</h3>

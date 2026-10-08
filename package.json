@@ -18,6 +18,7 @@
     "format": "prettier --write src e2e docs README.md vite.config.ts playwright.config.ts"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/language": "^6.13.1",

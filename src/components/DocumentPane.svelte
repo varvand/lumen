@@ -212,6 +212,10 @@
                   bind:this={editor}
                   value={active.body}
                   onchange={(body) => ui.change({ body })}
+                  linkTitles={() =>
+                    [...library.titles.values()]
+                      .filter((note) => note.id !== active.id)
+                      .map((note) => note.title.trim())}
                 />{/key}
             </div>{/if}
           {#if ui.mode !== 'write'}<div class="preview-pane">

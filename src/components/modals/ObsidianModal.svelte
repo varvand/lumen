@@ -113,8 +113,8 @@
         <li><strong>Folders</strong> become collections, like “Physics / Waves”.</li>
         <li><strong>Tags</strong> from properties and #tags in the text are kept.</li>
         <li>
-          <strong>[[Links]]</strong> become plain text, and callouts become quotes. Images and other attachments
-          are not imported yet; a note marks where each one was.
+          <strong>[[Links]]</strong> between notes keep working, and callouts become quotes. Images and
+          other attachments are not imported yet; a note marks where each one was.
         </li>
         <li><strong>Importing again</strong> adds only notes that are new since last time.</li>
       </ul>

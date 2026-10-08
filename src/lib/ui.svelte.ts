@@ -119,7 +119,7 @@ class Workspace {
   }
   /** Open a list the user picked, showing the note list if it was hidden. */
   browse(next: Screen, collection = '') {
-    if (next !== 'practice' && this.listCollapsed) this.toggleList(false);
+    if (next !== 'practice' && next !== 'graph' && this.listCollapsed) this.toggleList(false);
     return this.navigate(next, collection);
   }
   open(modal: Modal) {
@@ -153,10 +153,31 @@ class Workspace {
     this.query = '';
     this.mobileNav = false;
     this.focus = false;
-    if (next !== 'practice') {
+    if (next !== 'practice' && next !== 'graph') {
       const candidates = library.notes.filter((n) => inScreen(n, next, collection));
       if (!candidates.some((n) => n.id === this.activeId)) this.activeId = candidates[0]?.id || '';
     }
+  }
+  /** Follow a [[link]]: open the note it names, or create that note when there is none. */
+  async openLink(target: string) {
+    const note = library.resolve(target);
+    if (note) return this.show(note);
+    const title = target.split('#')[0].split('/').pop()!.trim();
+    if (!title) return;
+    const from = this.active;
+    await this.createNote({
+      title,
+      collection: from && !from.inbox ? from.collection : this.collection || 'Personal',
+      inbox: false,
+    });
+  }
+  /** Open a note, staying in the current list when it already shows that note. */
+  async show(note: Note) {
+    const listed =
+      this.screen !== 'practice' &&
+      this.screen !== 'graph' &&
+      this.visibleNotes.some((n) => n.id === note.id);
+    return listed ? this.select(note.id) : this.reveal(note);
   }
   /** Open a note from search or practice, switching to the screen that contains it. */
   async reveal(note: Note) {

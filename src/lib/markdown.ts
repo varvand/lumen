@@ -6,25 +6,81 @@ import remarkRehype from 'remark-rehype';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeKatex from 'rehype-katex';
 import rehypeStringify from 'rehype-stringify';
+import type { Nodes, Parent, PhrasingContent, Root } from 'mdast';
+import type { VFile } from 'vfile';
+import { linkKey, linkLabel, WIKILINK } from './links';
+
+/** Whether a [[link]] target names an existing note, by its link key. */
+export type LinkResolver = (key: string) => boolean;
+
+/** Turn [[Title|alias]] in text into links Lumen opens as notes, marking missing ones. */
+function remarkWikilinks() {
+  return (tree: Root, file: VFile) => {
+    const exists = file.data.linkExists as LinkResolver | undefined;
+    const visit = (node: Nodes) => {
+      if (node.type === 'link' || node.type === 'linkReference' || !('children' in node)) return;
+      const parent = node as Parent;
+      parent.children = (parent.children as Nodes[]).flatMap((child): Nodes[] => {
+        if (child.type !== 'text') {
+          visit(child);
+          return [child];
+        }
+        const parts: PhrasingContent[] = [];
+        let last = 0;
+        for (const match of child.value.matchAll(WIKILINK)) {
+          const [raw, target, alias] = match;
+          if (match.index > last)
+            parts.push({ type: 'text', value: child.value.slice(last, match.index) });
+          const missing = exists ? !exists(linkKey(target)) : false;
+          parts.push({
+            type: 'link',
+            url: '#',
+            title: missing ? `Create “${linkLabel(target)}”` : null,
+            data: {
+              hProperties: {
+                className: missing ? ['wikilink', 'wikilink-missing'] : ['wikilink'],
+                dataWikilink: target.trim(),
+              },
+            },
+            children: [{ type: 'text', value: linkLabel(target, alias) }],
+          });
+          last = match.index + raw.length;
+        }
+        if (!parts.length) return [child];
+        if (last < child.value.length) parts.push({ type: 'text', value: child.value.slice(last) });
+        return parts;
+      }) as Parent['children'];
+    };
+    visit(tree);
+  };
+}
 
 // Sanitize user Markdown before KaTeX adds its trusted rendering markup.
 const processor = unified()
   .use(remarkParse)
   .use(remarkGfm)
   .use(remarkMath)
+  .use(remarkWikilinks)
   .use(remarkRehype)
   .use(rehypeSanitize, {
     ...defaultSchema,
     attributes: {
       ...defaultSchema.attributes,
       code: [['className', /^language-./, 'math-inline', 'math-display']],
+      a: [
+        ...(defaultSchema.attributes?.a || []).filter(
+          (attribute) => !Array.isArray(attribute) || attribute[0] !== 'className',
+        ),
+        ['className', 'data-footnote-backref', 'wikilink', 'wikilink-missing'],
+        'dataWikilink',
+      ],
     },
   })
   .use(rehypeKatex, { trust: false, strict: 'warn' })
   .use(rehypeStringify);
 
-export function renderMarkdown(markdown: string): string {
-  return String(processor.processSync(markdown));
+export function renderMarkdown(markdown: string, linkExists?: LinkResolver): string {
+  return String(processor.processSync({ value: markdown, data: { linkExists } }));
 }
 export function parseImport(markdown: string, filename: string) {
   const clean = markdown.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');

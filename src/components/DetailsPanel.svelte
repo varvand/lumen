@@ -1,6 +1,7 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { Brain, CaretRight, Plus, X } from 'phosphor-svelte';
+  import { Brain, CaretRight, LinkSimple, Plus, X } from 'phosphor-svelte';
+  import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { headings } from '../lib/markdown';
   import Select from './Select.svelte';
@@ -8,6 +9,12 @@
 
   let { note }: { note: Note } = $props();
   const outline = $derived(headings(note.body));
+  const linkedFrom = $derived(
+    (library.links.backlinks.get(note.id) || [])
+      .map((id) => library.get(id))
+      .filter((source) => source !== undefined)
+      .sort((a, b) => a.title.localeCompare(b.title)),
+  );
 
   async function jumpTo(title: string) {
     ui.mode = 'read';
@@ -35,6 +42,19 @@
         Add headings to give your note a little structure.
       </p>{/if}
   </nav>
+  <div class="panel-section">
+    <div class="panel-section-title">
+      <LinkSimple size={17} />
+      <h3>Linked from</h3>
+    </div>
+    {#if linkedFrom.length}<nav class="backlinks" aria-label="Linked from">
+        {#each linkedFrom as source (source.id)}<button onclick={() => ui.show(source)}
+            >{source.title || 'Untitled note'}<CaretRight size={12} /></button
+          >{/each}
+      </nav>{:else}<p class="helper">
+        No notes link here yet. Type [[ in another note to link to this one.
+      </p>{/if}
+  </div>
   <div class="panel-section">
     <div class="panel-section-title">
       <Brain size={17} />
