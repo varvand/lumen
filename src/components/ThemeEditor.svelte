@@ -45,9 +45,11 @@
   </div>
   <div class="color-grid">
     {#each TOKENS as token}<label class="color-field"
-        ><input type="color" bind:value={draft.colors[token]} /><span
-          >{TOKEN_LABELS[token]}<code>{draft.colors[token]}</code></span
-        ></label
+        ><input
+          type="color"
+          aria-label={TOKEN_LABELS[token]}
+          bind:value={draft.colors[token]}
+        /><span>{TOKEN_LABELS[token]}<code>{draft.colors[token]}</code></span></label
       >{/each}
   </div>
   <div class="theme-editor-actions">

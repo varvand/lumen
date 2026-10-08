@@ -9,12 +9,13 @@
     "preview": "vite preview --host 127.0.0.1",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "tauri": "tauri",
     "desktop": "tauri dev",
     "desktop:build": "tauri build",
     "desktop:release": "sh scripts/release-macos.sh",
     "mcp": "cargo run --manifest-path src-tauri/Cargo.toml --no-default-features --bin lumen-mcp",
-    "format": "prettier --write src docs README.md vite.config.ts"
+    "format": "prettier --write src e2e docs README.md vite.config.ts playwright.config.ts"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",
@@ -43,9 +44,11 @@
     "unified": "^11.0.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tauri-apps/cli": "^2.12.1",
     "@types/node": "^26.6.4",
+    "happy-dom": "^20.14.5",
     "prettier": "^3.9.9",
     "prettier-plugin-svelte": "^4.1.1",
     "svelte-check": "^4.7.6",

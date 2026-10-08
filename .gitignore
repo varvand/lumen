@@ -7,5 +7,6 @@ src-tauri/target/
 .env
 .lumen/
 test-results/
+playwright-report/
 
 src-tauri/gen/schemas/

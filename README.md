@@ -20,6 +20,7 @@ For the browser preview, run `npm run dev` and open http://127.0.0.1:1420. The p
 ```sh
 npm run check
 npm test
+npm run test:e2e   # Playwright against the browser preview; first run: npx playwright install chromium
 cargo test --manifest-path src-tauri/Cargo.toml --no-default-features
 npm run desktop:build
 ```

@@ -28,6 +28,9 @@
       aria-label="Search your library"
       placeholder="Search ideas, words, or tags…"
       bind:value={searchText}
+      onkeydown={(e) => {
+        if (e.key === 'Enter' && results[0]) void open(results[0]);
+      }}
     />
   </div>
   <div class="search-results">
