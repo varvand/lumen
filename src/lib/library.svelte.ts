@@ -104,6 +104,25 @@ class LibraryStore {
     this.notes.unshift(saved);
     return saved;
   }
+  /** Save many new notes, adding them to the list in batches so large imports stay smooth. */
+  async importNotes(notes: Note[], onProgress?: (done: number) => void) {
+    await this.flush();
+    const failed: { id: string; title: string; reason: string }[] = [];
+    let batch: Note[] = [];
+    for (const [i, note] of notes.entries()) {
+      try {
+        batch.push(await storage.save(note));
+      } catch (e) {
+        failed.push({ id: note.id, title: note.title, reason: String(e) });
+      }
+      if (batch.length >= 50 || i === notes.length - 1) {
+        this.notes = [...batch, ...this.notes];
+        batch = [];
+      }
+      onProgress?.(i + 1);
+    }
+    return failed;
+  }
   async refresh() {
     if (this.busy) return;
     try {

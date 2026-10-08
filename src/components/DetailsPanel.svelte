@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { Brain, CaretRight, Plus, X, Trash, ArrowCounterClockwise } from 'phosphor-svelte';
+  import { Brain, CaretRight, Plus, X } from 'phosphor-svelte';
   import { ui } from '../lib/ui.svelte';
   import { headings } from '../lib/markdown';
   import type { Intent, Note } from '../lib/types';
@@ -88,8 +88,4 @@
       /></label
     >
   </div>
-  <button class="text-button trash-note" onclick={() => ui.toggleTrash()}
-    >{#if note.trashed}<ArrowCounterClockwise size={15} />Restore note{:else}<Trash size={15} />Move
-      to Trash{/if}</button
-  >
 </aside>

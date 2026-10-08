@@ -3,6 +3,8 @@
   import { invoke } from '@tauri-apps/api/core';
   import { CheckCircle, Copy } from 'phosphor-svelte';
   import { ui } from '../lib/ui.svelte';
+  import { native } from '../lib/storage';
+  import { capturePrompt } from '../lib/seeds';
 
   interface ClaudeStatus {
     installed: boolean;
@@ -30,16 +32,46 @@
       busy = false;
     }
   }
-  onMount(() => void run('claude_status'));
+  onMount(() => {
+    if (native) void run('claude_status');
+  });
 </script>
 
 <div class="settings-section">
   <h3>Chat apps</h3>
   <p class="helper">
-    Let Claude save notes straight into your Inbox. Ask, for example, “Save a short summary of this
-    chat to Lumen.” The chat app writes the summary; Lumen only receives the note and cannot read
-    your chats or library.
+    The chat app writes the summary; Lumen only receives the note and cannot read your chats or
+    library.
   </p>
+  <span class="chat-app-name">ChatGPT</span>
+  <p class="helper">
+    Paste this prompt into a conversation you want to keep, then paste the reply into Capture or
+    import the .md file it gives you.
+  </p>
+  <div class="library-actions">
+    <button class="secondary-button" onclick={() => ui.copy(capturePrompt)}
+      ><Copy size={15} />Copy summary prompt</button
+    >
+  </div>
+  <details class="chat-app-details">
+    <summary>View prompt</summary>
+    <pre class="prompt-copy">{capturePrompt}</pre>
+  </details>
+  <details class="chat-app-details">
+    <summary>Advanced: connect the save tool</summary>
+    <p class="helper">
+      The included <code>lumen-mcp</code> companion exposes a <code>save_note</code> tool. For Codex,
+      connect its stdio transport; for ChatGPT, bridge it with a private MCP tunnel (see docs/chatgpt.md).
+    </p>
+    <div class="code-command">
+      <code>npm run mcp</code><button
+        class="icon-button"
+        title="Copy command"
+        aria-label="Copy MCP command"
+        onclick={() => ui.copy('npm run mcp')}><Copy size={15} /></button
+      >
+    </div>
+  </details>
   {#if status}
     <div class="setting-row">
       <span class="chat-app-name"
@@ -73,8 +105,8 @@
       >
     </div>
     <p class="helper">
-      Run this once in a terminal. ChatGPT runs in the cloud and can’t reach Lumen directly; use
-      Capture an idea → Connect ChatGPT instead.
+      Run this once in a terminal. Then ask, for example, “Save a short summary of this chat to
+      Lumen.”
     </p>
   {/if}
   {#if error}<p class="helper danger">{error}</p>{/if}

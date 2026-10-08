@@ -2,6 +2,7 @@ pub mod connect;
 pub mod protocol;
 pub mod store;
 pub mod updates;
+pub mod vault;
 
 #[cfg(feature = "desktop")]
 mod desktop {
@@ -74,7 +75,8 @@ mod desktop {
                 updates::install_update,
                 connect::claude_status,
                 connect::connect_claude,
-                connect::disconnect_claude
+                connect::disconnect_claude,
+                super::vault::read_markdown_folder
             ])
             .run(tauri::generate_context!())
             .expect("Lumen could not start");

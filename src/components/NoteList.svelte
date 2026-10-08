@@ -4,11 +4,11 @@
     Plus,
     Brain,
     CaretDown,
-    ArrowCounterClockwise,
     FileText,
     PushPin,
-    UploadSimple,
     X,
+    ArrowLineLeft,
+    TrayArrowDown,
   } from 'phosphor-svelte';
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
@@ -29,37 +29,45 @@
 <section class="note-list" aria-label="Note library">
   <div class="list-title" data-tauri-drag-region>
     <h1 data-tauri-drag-region>{ui.title}</h1>
-    <button
-      class="icon-button"
-      aria-label="New note"
-      title="New note (⌘ N)"
-      onclick={() => ui.createNote()}><Plus size={20} /></button
+    <span class="list-count" data-tauri-drag-region
+      >{ui.visibleNotes.length} {ui.visibleNotes.length === 1 ? 'note' : 'notes'}</span
     >
+    <div class="list-title-actions">
+      <button
+        class="icon-button"
+        aria-label="New note"
+        title="New note (⌘ N)"
+        onclick={() => ui.createNote()}><Plus size={20} /></button
+      ><button
+        class="icon-button"
+        aria-label="Capture an idea"
+        title="Capture an idea or import Markdown"
+        onclick={() => ui.open('capture')}><TrayArrowDown size={19} /></button
+      ><button
+        class="icon-button list-toggle"
+        aria-label="Hide note list"
+        title="Hide note list (⌃⌘L)"
+        onclick={() => ui.toggleList(true)}><ArrowLineLeft size={18} /></button
+      >
+    </div>
   </div>
   <div class="list-controls">
-    <span>{ui.visibleNotes.length} {ui.visibleNotes.length === 1 ? 'note' : 'notes'}</span><label
-      class="sort-control"
+    <label class="list-search"
+      ><MagnifyingGlass size={14} /><input
+        aria-label="Filter notes"
+        placeholder="Filter"
+        bind:value={ui.query}
+      />{#if ui.query}<button
+          class="icon-button small"
+          aria-label="Clear filter"
+          onclick={() => (ui.query = '')}><X size={12} /></button
+        >{/if}</label
+    ><label class="sort-control" title="Sort notes"
       ><select aria-label="Sort notes" bind:value={ui.sort}
         ><option value="updated">Last edited</option><option value="title">Title</option></select
-      ><CaretDown size={12} /></label
-    ><button
-      class="icon-button small"
-      aria-label="Refresh library"
-      title="Refresh library"
-      onclick={() => library.refresh()}><ArrowCounterClockwise size={13} /></button
+      ><CaretDown size={11} /></label
     >
   </div>
-  <label class="list-search"
-    ><MagnifyingGlass size={14} /><input
-      aria-label="Filter notes"
-      placeholder="Filter notes…"
-      bind:value={ui.query}
-    />{#if ui.query}<button
-        class="icon-button small"
-        aria-label="Clear filter"
-        onclick={() => (ui.query = '')}><X size={12} /></button
-      >{/if}</label
-  >
   <div class="note-list-scroll">
     {#if library.loading}<div class="skeleton-note"></div>
       <div class="skeleton-note"></div>
@@ -70,6 +78,9 @@
         {#if !ui.query && ui.screen === 'library'}<button
             class="text-button accent"
             onclick={() => ui.createNote()}>Create a note <Plus size={14} /></button
+          >{:else if !ui.query && ui.screen === 'inbox'}<button
+            class="text-button accent"
+            onclick={() => ui.open('capture')}>Capture an idea <TrayArrowDown size={14} /></button
           >{/if}
       </div>
     {:else}{#each ui.visibleNotes as note (note.id)}
@@ -79,8 +90,8 @@
           onclick={() => ui.select(note.id)}
         >
           <div class="note-item-top">
-            <span class="note-collection">{note.collection || 'Unsorted'}</span
-            >{#if note.pinned}<PushPin size={12} weight="fill" />{:else}<span
+            {#if !ui.collection}<span class="note-collection">{note.collection || 'Unsorted'}</span
+              >{/if}{#if note.pinned}<PushPin size={12} weight="fill" />{:else}<span
                 >{dateLabel(note.updatedAt)}</span
               >{/if}
           </div>
@@ -95,7 +106,4 @@
         </button>
       {/each}{/if}
   </div>
-  <button class="import-footer" onclick={() => ui.importPicker?.click()}
-    ><UploadSimple size={15} /> Import Markdown</button
-  >
 </section>

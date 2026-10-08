@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ArrowRight, ArrowLeft, Check, Brain, Lightbulb, Code, BookOpen } from 'phosphor-svelte';
+  import { ArrowRight, ArrowLeft } from 'phosphor-svelte';
   import type { Attempt } from '../lib/types';
   import { latestAttempt, schedule, type LatestAttempts, type PracticeItem } from '../lib/learning';
   import Markdown from './Markdown.svelte';
@@ -25,6 +25,7 @@
   let error = $state('');
   let completed = $state(0);
   let current = $derived(session[index]);
+  let noteCount = $derived(new Set(due.map((q) => q.note.id)).size);
   let finished = $derived(started && index >= session.length);
   let previous = $derived(current && latestAttempt(latest, current.prompt.id, current.note.id));
   let effortDays = $derived(schedule('effort', previous).intervalDays);
@@ -68,18 +69,16 @@
 <div class="practice-page">
   <header class="page-top" data-tauri-drag-region>
     <button class="text-button" onclick={onback}><ArrowLeft size={15} /> Library</button><span
-      class="subtle">Practice · Make an idea your own</span
+      class="subtle">Practice</span
     >
   </header>
   <div class="practice-inner">
     {#if !started}
-      <span class="large-icon"><Brain size={30} weight="light" /></span>
-      <p class="eyebrow">A MOMENT TO THINK</p>
       <h1>What stayed with you?</h1>
-      <p class="practice-intro">Close the notes. Reconstruct an idea. Try it somewhere new.</p>
       <div class="session-overview">
         <strong>{due.length}</strong><span
-          >questions ready<br /><small>from {new Set(due.map((q) => q.note.id)).size} notes</small
+          >{due.length === 1 ? 'question' : 'questions'} ready<br /><small
+            >from {noteCount} {noteCount === 1 ? 'note' : 'notes'} · up to 8 per session</small
           ></span
         >
       </div>
@@ -89,20 +88,9 @@
       {#if !due.length}<p class="helper">
           You’re up to date. Add questions in a note’s learning panel, or return when a review is
           due.
-        </p>{:else}<p class="helper">Up to 8 questions. Take the time you need.</p>{/if}
-      <div class="practice-methods">
-        <div><BookOpen size={18} /><strong>Recall</strong><span>Retrieve the idea.</span></div>
-        <div><Lightbulb size={18} /><strong>Explain</strong><span>Understand the why.</span></div>
-        <div><Code size={18} /><strong>Apply</strong><span>Try a new context.</span></div>
-      </div>
-      <p class="science-note">
-        Activities informed by learning research. Review intervals are an initial heuristic; your
-        self-assessments are not a measure of mastery.
-      </p>
+        </p>{/if}
     {:else if finished}
-      <span class="large-icon"><Check size={30} /></span>
-      <p class="eyebrow">SESSION COMPLETE</p>
-      <h1>A little more connected.</h1>
+      <h1>Session complete</h1>
       <p class="practice-intro">
         You worked through {completed}
         {completed === 1 ? 'question' : 'questions'}. Your attempts and next review dates are saved.

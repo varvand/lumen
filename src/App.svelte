@@ -9,6 +9,7 @@
   import CaptureModal from './components/modals/CaptureModal.svelte';
   import SettingsModal from './components/modals/SettingsModal.svelte';
   import QuestionModal from './components/modals/QuestionModal.svelte';
+  import ObsidianModal from './components/modals/ObsidianModal.svelte';
   import { library } from './lib/library.svelte';
   import { preferences } from './lib/preferences.svelte';
   import { ui } from './lib/ui.svelte';
@@ -52,6 +53,18 @@
     if (event.metaKey && event.ctrlKey && key === 's') {
       event.preventDefault();
       ui.toggleSidebar();
+      return;
+    }
+    if (event.metaKey && event.ctrlKey && key === 'l') {
+      event.preventDefault();
+      ui.toggleList();
+      return;
+    }
+    // ⌘+ ⌘− ⌘0 resize interface text; document text has its own setting.
+    if (key === '=' || key === '+' || key === '-' || key === '0') {
+      event.preventDefault();
+      preferences.stepUiScale(key === '0' ? 0 : key === '-' ? -1 : 1);
+      ui.notify(`Interface text ${Math.round(preferences.uiScale * 100)}%`);
       return;
     }
     if (key === 'k') {
@@ -123,9 +136,10 @@
   class:mobile-nav={ui.mobileNav}
   class:mac-titlebar={macTitlebar}
   class:sidebar-collapsed={ui.sidebarCollapsed}
+  class:list-collapsed={ui.listCollapsed}
   data-theme={preferences.active.dark ? 'dark' : 'light'}
   data-reader={preferences.readerFont}
-  style={`--reader-size: ${preferences.fontSize}px; ${themeStyle(preferences.active)}`}
+  style={`--reader-size: ${preferences.fontSize}px; --ui-scale: ${preferences.uiScale}; ${themeStyle(preferences.active)}`}
 >
   <Sidebar />
 
@@ -165,4 +179,5 @@
   {#if ui.modal === 'capture'}<CaptureModal />{/if}
   {#if ui.modal === 'settings'}<SettingsModal />{/if}
   {#if ui.modal === 'question' && ui.active}<QuestionModal note={ui.active} />{/if}
+  {#if ui.modal === 'obsidian'}<ObsidianModal />{/if}
 </div>

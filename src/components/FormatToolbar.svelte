@@ -41,5 +41,5 @@
     title="LaTeX equation"
     onclick={() => editor?.format('$$\n', '\n$$', '\\sum_{i=1}^{n} x_i')}
     ><Sigma size={18} /></button
-  ><span class="format-hint">Markdown + LaTeX</span>
+  >
 </div>
