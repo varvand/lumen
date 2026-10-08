@@ -1,3 +1,4 @@
+pub mod assistant;
 pub mod connect;
 pub mod protocol;
 pub mod store;
@@ -6,6 +7,7 @@ pub mod vault;
 
 #[cfg(feature = "desktop")]
 mod desktop {
+    use super::assistant::commands as assistant;
     use super::connect::commands as connect;
     use super::store::{self, Attempt, Library, Note, Result, Store};
     use super::updates::commands as updates;
@@ -73,6 +75,8 @@ mod desktop {
                 updates::app_version,
                 updates::check_update,
                 updates::install_update,
+                assistant::assistant_providers,
+                assistant::ask_assistant,
                 connect::claude_status,
                 connect::connect_claude,
                 connect::disconnect_claude,

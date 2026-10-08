@@ -1579,7 +1579,7 @@ dialog::backdrop {
 }
 .practice-container {
   grid-column: 2/-1;
-  overflow: auto;
+  overflow: hidden;
 }
 .practice-page {
   min-height: 100%;
@@ -2150,4 +2150,109 @@ dialog::backdrop {
 }
 .settings-section .library-actions {
   margin-bottom: 12px;
+}
+.practice-layout {
+  display: flex;
+  height: 100%;
+}
+.practice-layout .practice-page {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+.tutor {
+  display: flex;
+  flex-direction: column;
+  width: calc(340px * var(--ui-scale, 1));
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+}
+.tutor-head {
+  height: 61px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.tutor-title {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+.tutor-head .select-input {
+  width: auto;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.tutor-body {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+}
+.tutor-body .helper,
+.tutor-body .error-text {
+  margin: 0;
+}
+.tutor-suggestions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.tutor-suggestions .secondary-button {
+  padding: 6px 11px;
+  font-size: var(--text-xs);
+  font-weight: 450;
+  white-space: normal;
+  text-align: left;
+}
+.tutor-question {
+  align-self: flex-end;
+  max-width: 90%;
+  padding: 9px 13px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: var(--text-md);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.tutor-thinking {
+  animation: appear 0.2s ease;
+}
+.tutor-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+.tutor-input textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 200px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  border-radius: var(--radius);
+  padding: 10px 13px;
+  font-size: var(--text-md);
+  line-height: 1.55;
+  resize: vertical;
+}
+.tutor-input .primary-button {
+  padding: 10px 12px;
+}
+@media (max-width: 800px) {
+  .tutor {
+    position: fixed;
+    inset: 0 0 0 auto;
+    z-index: 20;
+    width: min(100%, 360px);
+    box-shadow: var(--shadow);
+  }
 }
