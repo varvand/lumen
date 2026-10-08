@@ -32,9 +32,11 @@ describe('Obsidian frontmatter', () => {
 });
 
 describe('Obsidian syntax', () => {
-  it('turns wikilinks into their visible text', () => {
-    expect(convertBody('See [[Wave equation]], [[Optics/Lenses|lenses]] and [[Note#Part]].')).toBe(
-      'See Wave equation, lenses and Note.',
+  it('keeps [[links]] to notes and flattens links to attachments', () => {
+    const links = 'See [[Wave equation]], [[Optics/Lenses|lenses]] and [[Note#Part]].';
+    expect(convertBody(links)).toBe(links);
+    expect(convertBody('Read [[paper.pdf|the paper]] and [[Scans/fig.png]].')).toBe(
+      'Read the paper and fig.png.',
     );
   });
 
@@ -45,7 +47,7 @@ describe('Obsidian syntax', () => {
       counts,
     );
     expect(out).toBe(
-      '*(Attachment not imported: diagram.png)*\n*(Embedded note: Other note)*\n*(Attachment not imported: alt text)*\n![web](https://x.org/a.png)',
+      '*(Attachment not imported: diagram.png)*\n*(Embedded note: [[Other note]])*\n*(Attachment not imported: alt text)*\n![web](https://x.org/a.png)',
     );
     expect(counts.images).toBe(2);
   });
@@ -60,7 +62,7 @@ describe('Obsidian syntax', () => {
   it('never rewrites code', () => {
     const code = '```md\n[[keep]] ==this== %%too%%\n```\nand `[[inline]]` but [[this]]';
     expect(convertBody(code)).toBe(
-      '```md\n[[keep]] ==this== %%too%%\n```\nand `[[inline]]` but this',
+      '```md\n[[keep]] ==this== %%too%%\n```\nand `[[inline]]` but [[this]]',
     );
   });
 

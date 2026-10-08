@@ -38,4 +38,4 @@ export interface Library {
   attempts: Attempt[];
   path: string;
 }
-export type Screen = 'library' | 'inbox' | 'practice' | 'trash';
+export type Screen = 'library' | 'inbox' | 'practice' | 'graph' | 'trash';

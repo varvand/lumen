@@ -1,6 +1,7 @@
 import { storage } from './storage';
 import { collectionTree } from './collections';
 import { latestAttempts, practiceQueue } from './learning';
+import { linkGraph, linkKey, titleIndex } from './links';
 import type { Attempt, Note } from './types';
 
 const AUTOSAVE_MS = 600;
@@ -35,6 +36,9 @@ class LibraryStore {
   latest = $derived(latestAttempts(this.attempts));
   folders = $derived(collectionTree(this.notes));
   due = $derived(practiceQueue(this.notes, this.latest));
+  /** Notes that [[links]] can reach, by lowercased title. Trashed notes are not linkable. */
+  titles = $derived(titleIndex(this.live));
+  links = $derived(linkGraph(this.live, this.titles));
 
   #timers = new Map<string, ReturnType<typeof setTimeout>>();
   #generations = new Map<string, number>();
@@ -42,6 +46,10 @@ class LibraryStore {
 
   get(id: string) {
     return this.notes.find((n) => n.id === id);
+  }
+  /** The note a [[link]] target points at, if it exists. */
+  resolve(target: string) {
+    return this.titles.get(linkKey(target));
   }
   isDirty(id: string) {
     return this.dirty.includes(id);

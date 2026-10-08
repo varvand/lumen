@@ -956,6 +956,18 @@ button:disabled:hover {
 .prose a:hover {
   text-decoration-color: var(--accent);
 }
+.prose a.wikilink {
+  color: var(--accent);
+  text-decoration: none;
+}
+.prose a.wikilink:hover {
+  text-decoration: underline;
+}
+.prose a.wikilink-missing {
+  color: var(--muted);
+  text-decoration: underline dashed;
+  text-decoration-color: var(--border);
+}
 .prose code {
   font-size: 0.75em;
   font-family: 'IBM Plex Mono', monospace;
@@ -1166,6 +1178,30 @@ button:disabled:hover {
   width: 14px;
   flex-shrink: 0;
   color: var(--accent);
+}
+.backlinks {
+  display: grid;
+  gap: 2px;
+  margin-top: 10px;
+}
+.backlinks button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--accent);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.backlinks button:hover {
+  background: var(--hover);
+}
+.backlinks button svg {
+  flex-shrink: 0;
+  color: var(--muted);
 }
 .prompt-list {
   display: grid;
@@ -1754,6 +1790,119 @@ dialog::backdrop {
 .practice-container {
   grid-column: 2/-1;
   overflow: hidden;
+}
+.graph-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+.graph-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 10px 35px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--secondary);
+}
+.graph-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.graph-controls input {
+  accent-color: var(--accent);
+}
+.graph-controls .icon-button {
+  margin-left: auto;
+}
+.graph-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.graph-canvas svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.graph-canvas svg.dragging {
+  cursor: grabbing;
+}
+.graph-link {
+  stroke: var(--border);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+  transition: opacity 0.15s;
+}
+.graph-link.near {
+  stroke: var(--accent);
+}
+.graph-node {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.graph-node circle {
+  fill: var(--node-fill, var(--muted));
+  stroke: var(--background);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.graph-node text {
+  fill: var(--secondary);
+  font-size: 11px;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--background);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.graph-node.active circle,
+.graph-node.near circle {
+  fill: var(--accent);
+}
+.graph-node.active text {
+  fill: var(--text);
+  font-weight: 600;
+}
+.graph-node:focus {
+  outline: none;
+}
+.graph-node:focus-visible circle {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+svg.hovering .graph-node:not(.near),
+svg.hovering .graph-link:not(.near) {
+  opacity: 0.25;
+}
+.graph-hint,
+.graph-empty {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+.graph-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  pointer-events: none;
+}
+.graph-empty {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  align-content: center;
+  height: 100%;
+  padding: 0 35px;
 }
 .practice-page {
   min-height: 100%;

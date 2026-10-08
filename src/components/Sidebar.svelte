@@ -6,6 +6,7 @@
     Files,
     Tray,
     Brain,
+    Graph,
     FolderSimple,
     GearSix,
     Trash,
@@ -152,6 +153,11 @@
       ><Brain size={19} /><span>Practice</span>{#if library.due.length}<span
           class="nav-count accent-count">{library.due.length}</span
         >{/if}</button
+    >
+    <button
+      class:active={ui.screen === 'graph'}
+      title={tip('Graph')}
+      onclick={() => ui.navigate('graph')}><Graph size={19} /><span>Graph</span></button
     >
   </nav>
   <button

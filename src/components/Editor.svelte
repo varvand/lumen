@@ -16,8 +16,18 @@
   import { livePreview } from '../lib/livePreview';
   import { preferences } from '../lib/preferences.svelte';
   import { mathPreview } from '../lib/math';
+  import { linkCompletion } from '../lib/linkCompletion';
 
-  let { value, onchange }: { value: string; onchange: (text: string) => void } = $props();
+  let {
+    value,
+    onchange,
+    linkTitles = () => [],
+  }: {
+    value: string;
+    onchange: (text: string) => void;
+    /** Note titles offered after typing [[. */
+    linkTitles?: () => string[];
+  } = $props();
   let element: HTMLDivElement;
   let view: EditorView | undefined;
   let internal = '';
@@ -43,6 +53,7 @@
         extensions: [
           markdown({ base: markdownLanguage }),
           preview.of(preferences.livePreview ? livePreview() : []),
+          linkCompletion(() => linkTitles()),
           history(),
           drawSelection(),
           highlightActiveLine(),

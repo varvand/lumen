@@ -1,12 +1,16 @@
 <script lang="ts">
   import { renderMarkdown } from '../lib/markdown';
+  import { library } from '../lib/library.svelte';
+  import { ui } from '../lib/ui.svelte';
   import { native } from '../lib/storage';
   let { value, compact = false }: { value: string; compact?: boolean } = $props();
-  let html = $derived(renderMarkdown(value));
+  let html = $derived(renderMarkdown(value, (key) => library.titles.has(key)));
   async function followLink(event: MouseEvent) {
     const anchor = (event.target as HTMLElement).closest('a');
     if (!anchor) return;
     event.preventDefault();
+    const target = anchor.dataset.wikilink;
+    if (target) return ui.openLink(target);
     const url = anchor.getAttribute('href');
     if (!url || !/^https?:\/\//i.test(url)) return;
     if (native) {

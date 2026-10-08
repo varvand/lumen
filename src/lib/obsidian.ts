@@ -1,10 +1,12 @@
 /**
  * Convert an Obsidian vault into Lumen notes.
  *
- * Folders become collections, properties and inline #tags become tags, and Obsidian-only
- * syntax (wikilinks, embeds, callouts, comments) becomes plain Markdown. Lumen has no
- * attachments yet, so images become a visible placeholder and are counted in the report.
+ * Folders become collections, properties and inline #tags become tags, and [[links]] between
+ * notes are kept. Other Obsidian-only syntax (embeds, callouts, comments) becomes plain
+ * Markdown. Lumen has no attachments yet, so images become a visible placeholder and are
+ * counted in the report.
  */
+import { linkLabel, outsideCode, WIKILINK } from './links';
 import type { Note } from './types';
 
 export interface VaultFile {
@@ -69,24 +71,6 @@ function unquote(value: string) {
   return value.trim().replace(/^(['"])(.*)\1$/, '$2');
 }
 
-/** Apply a transform to prose only, leaving fenced and inline code untouched. */
-function outsideCode(text: string, transform: (prose: string) => string) {
-  return text
-    .split(/(^```[\s\S]*?^```[ \t]*$|^~~~[\s\S]*?^~~~[ \t]*$)/m)
-    .map((part, i) =>
-      i % 2
-        ? part
-        : part
-            .split(/(`+[^`\n]*?`+)/)
-            .map((piece, j) => (j % 2 ? piece : transform(piece)))
-            .join(''),
-    )
-    .join('');
-}
-
-const linkText = (target: string, alias?: string) =>
-  alias?.trim() || target.split('#')[0].split('/').pop()!.trim() || target.replace(/^#\^?/, '');
-
 /** Turn Obsidian-only syntax into Markdown Lumen renders. */
 export function convertBody(body: string, counts = { images: 0 }) {
   return outsideCode(body, (prose) =>
@@ -100,7 +84,7 @@ export function convertBody(body: string, counts = { images: 0 }) {
           counts.images++;
           return `*(Attachment not imported: ${name.split('/').pop()})*`;
         }
-        return `*(Embedded note: ${linkText(target)})*`;
+        return `*(Embedded note: [[${target.trim()}]])*`;
       })
       // Markdown images pointing at vault files, not the web.
       .replace(/!\[([^\]]*)\]\((?!https?:|data:)([^)]+)\)/g, (_, alt: string, src: string) => {
@@ -108,9 +92,9 @@ export function convertBody(body: string, counts = { images: 0 }) {
         const name = decodeURIComponent(src.trim().split('/').pop() || src);
         return `*(Attachment not imported: ${alt.trim() || name})*`;
       })
-      // [[wikilinks]] keep their visible text.
-      .replace(/\[\[([^\]|]+?)(?:\|([^\]]*))?\]\]/g, (_, target: string, alias?: string) =>
-        linkText(target, alias),
+      // [[Links]] to notes stay links; links to attachments keep their visible text.
+      .replace(WIKILINK, (link: string, target: string, alias?: string) =>
+        IMAGE.test(target.split('#')[0].trim()) ? linkLabel(target, alias) : link,
       )
       // > [!type]+ Title  →  > **Type: Title**
       .replace(

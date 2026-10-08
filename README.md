@@ -64,6 +64,8 @@ Install from the DMG into Applications before updating. An app run directly from
 - Reading, split, and focus views; light, dark, and system themes; adjustable reading typeface and size.
 - Local rendering of `$inline$` and `$$display$$` LaTeX math, including aligned equations and matrices. This is math rendering, not a full `.tex` document compiler.
 - Library search, collections, tags, pinning, a capture inbox, and recoverable Trash.
+- `[[Links]]` between notes: type `[[` to pick a note title, click a link in the preview to open that note (or create it), and see "Linked from" notes in the details panel. Obsidian imports keep their links.
+- A graph page that draws notes and their links. Drag notes, pan, zoom with the scroll wheel, and click a note to open it.
 - Debounced autosave, flush on note changes and desktop close, atomic file replacement, and revision checks for conflicting saves.
 - Markdown file import, paste capture, and export.
 - Recall, explanation, and application questions with hidden suggested answers, self-assessed attempts, and adaptive review dates.
