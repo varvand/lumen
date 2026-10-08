@@ -91,8 +91,9 @@
       <div>
         <h3>Optional: connect the save tool</h3>
         <p>
-          The included <code>lumen-mcp</code> companion exposes <code>save_learning_note</code>.
-          Connect its stdio transport in Codex, or bridge it to ChatGPT with a private MCP tunnel.
+          The included <code>lumen-mcp</code> companion exposes a <code>save_note</code> tool. For Claude,
+          use Settings → Chat apps. For Codex, connect its stdio transport; for ChatGPT, bridge it with
+          a private MCP tunnel.
         </p>
         <div class="code-command">
           <code>npm run mcp</code><button

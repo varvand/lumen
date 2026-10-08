@@ -2,6 +2,7 @@
   import { ArrowUpRight, FolderSimple, PencilSimple, Plus } from 'phosphor-svelte';
   import Modal from '../Modal.svelte';
   import ThemeEditor from '../ThemeEditor.svelte';
+  import ChatAppsSettings from '../ChatAppsSettings.svelte';
   import { library } from '../../lib/library.svelte';
   import { preferences, type ReaderFont } from '../../lib/preferences.svelte';
   import { BUILTIN_THEMES, newThemeId, type ThemeDefinition } from '../../lib/themes';
@@ -107,6 +108,7 @@
         ><FolderSimple size={16} />Open library folder</button
       >{/if}
   </div>
+  {#if native}<ChatAppsSettings />{/if}
   {#if updates.enabled}<div class="settings-section">
       <h3>Updates</h3>
       <div class="setting-row">

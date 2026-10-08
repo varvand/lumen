@@ -239,6 +239,26 @@ button:disabled:hover {
   justify-content: space-between;
   margin: 19px 3px 10px;
 }
+.chat-app-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.setting-row .chat-app-name {
+  margin-bottom: 0;
+}
+.chat-app-name .connected {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--accent);
+}
+.code-command code {
+  overflow-wrap: anywhere;
+}
 .update-button {
   display: flex;
   align-items: center;

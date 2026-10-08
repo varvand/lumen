@@ -1,9 +1,11 @@
+pub mod connect;
 pub mod protocol;
 pub mod store;
 pub mod updates;
 
 #[cfg(feature = "desktop")]
 mod desktop {
+    use super::connect::commands as connect;
     use super::store::{self, Attempt, Library, Note, Result, Store};
     use super::updates::commands as updates;
     use std::path::PathBuf;
@@ -69,7 +71,10 @@ mod desktop {
                 export_markdown,
                 updates::app_version,
                 updates::check_update,
-                updates::install_update
+                updates::install_update,
+                connect::claude_status,
+                connect::connect_claude,
+                connect::disconnect_claude
             ])
             .run(tauri::generate_context!())
             .expect("Lumen could not start");

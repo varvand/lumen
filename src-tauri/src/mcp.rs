@@ -7,6 +7,7 @@ use std::io::{self, BufRead, Write};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = default_path()?;
     let mut store = Store::open(&root)?;
+    let mut session = protocol::Session::default();
     eprintln!("Lumen MCP ready. Library: {}", root.display());
     let stdin = io::stdin();
     let mut stdout = io::stdout().lock();
@@ -29,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
         let response = match serde_json::from_slice(&buffer) {
-            Ok(request) => protocol::handle(&mut store, request),
+            Ok(request) => protocol::handle(&mut store, &mut session, request),
             Err(_) => Some(
                 serde_json::json!({"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}),
             ),

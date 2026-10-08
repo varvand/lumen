@@ -9,9 +9,18 @@
 
 This works without connecting any account to Lumen. The app does not itself summarize arbitrary pasted transcripts: the summary is generated in your ChatGPT conversation.
 
+## Claude
+
+Claude Desktop and Claude Code run the companion locally, so no tunnel or account setup is needed. In Lumen, open **Settings → Chat apps**:
+
+- **Claude Desktop:** choose **Connect**, then quit and reopen Claude Desktop. Lumen adds only an `mcpServers.lumen` entry to `claude_desktop_config.json` and leaves the rest of the file unchanged. **Disconnect** removes that entry.
+- **Claude Code:** copy the shown `claude mcp add` command and run it once.
+
+Then ask in any chat: “Save a short summary of this chat to Lumen.”
+
 ## Automate the save using MCP
 
-The included `lumen-mcp` executable is a stdio MCP server. It advertises one tool, `save_learning_note`, which creates a Markdown note and optional recall, explanation, and application questions. Identical calls are deduplicated. It cannot read your entire library, delete notes, or browse chat history. It has no inference model and asks for no OpenAI model API key.
+The included `lumen-mcp` executable is a stdio MCP server. It advertises one tool, `save_note`, which creates a Markdown note and optional recall, explanation, and application questions. Notes land in the Inbox, in a collection named after the chat app (for example **From Claude**) unless the chat picks one. Older setups that call `save_learning_note` keep working. Identical calls are deduplicated. It cannot read your entire library, delete notes, or browse chat history. It has no inference model and asks for no OpenAI model API key.
 
 Build the companion:
 
