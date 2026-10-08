@@ -1,7 +1,8 @@
 name: Main build
 
-# Build the macOS app from main after CI succeeds, and publish it as the rolling
-# "main-latest" pre-release so the current main branch is always downloadable.
+# Build the macOS app from main after CI succeeds. Each build is published as a permanent,
+# tagged release (v<version>), and the rolling "main-latest" pre-release is replaced so its
+# stable links (the DMG and the updater's latest.json) always point at the newest build.
 on:
   workflow_run:
     workflows: [CI]
@@ -25,6 +26,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.SHA }}
+          # Full history and tags, for release notes since the previous version.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -38,28 +41,60 @@ jobs:
       - run: npm ci
       - name: Build universal, ad-hoc signed app and DMG
         env:
-          # Stamped into the app so the updater can order builds of one version.
+          # Becomes the patch version: <major>.<minor>.<run number>.
           LUMEN_BUILD: ${{ github.run_number }}
           # Signs Lumen.app.tar.gz for in-app updates; skipped when the secret is absent.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: npm run desktop:release
-      - name: Publish main-latest pre-release
+      - name: Publish the tagged release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          macos=src-tauri/target/universal-apple-darwin/release/bundle/macos
+          version=$(plutil -extract CFBundleShortVersionString raw "$macos/Lumen.app/Contents/Info.plist")
+          tag="v$version"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+          dmg=$(ls src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
+          assets="$dmg"
+          if [ -f "$macos/Lumen.app.tar.gz.sig" ]; then
+            assets="$assets $macos/Lumen.app.tar.gz $macos/Lumen.app.tar.gz.sig"
+          fi
+          previous=$(git tag --list 'v*' --sort=-v:refname | grep -vx "$tag" | head -1 || true)
+          {
+            if [ -n "$previous" ]; then
+              echo "Changes since $previous:"
+              echo
+              git log --no-merges --format='- %s (%h)' "$previous..$SHA"
+            else
+              echo "First tagged build."
+            fi
+            echo
+            echo "Universal macOS app (Apple silicon and Intel), ad-hoc signed and not notarized: on first launch, use System Settings → Privacy & Security → Open Anyway."
+          } > notes.md
+          if gh release view "$tag" >/dev/null 2>&1; then
+            # A re-run of the same build: refresh the assets, keep the release.
+            gh release upload "$tag" $assets --clobber
+          else
+            gh release create "$tag" $assets --target "$SHA" --title "Lumen $version" \
+              --notes-file notes.md --latest
+          fi
+      - name: Update main-latest
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
           dmg=$(ls src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
           cp "$dmg" Lumen-macos-universal.dmg
-          # In-app update payload and manifest (see README → Updates).
-          updater=
-          macos=src-tauri/target/universal-apple-darwin/release/bundle/macos
-          if [ -f "$macos/Lumen.app.tar.gz.sig" ]; then
-            sh scripts/updater-manifest.sh "${{ github.run_number }}" "$SHA" > latest.json
-            updater="$macos/Lumen.app.tar.gz latest.json"
+          # The updater manifest; installed apps poll main-latest/latest.json (see README → Updates).
+          manifest=
+          if [ -f src-tauri/target/universal-apple-darwin/release/bundle/macos/Lumen.app.tar.gz.sig ]; then
+            sh scripts/updater-manifest.sh "${{ github.run_number }}" "$SHA" "$TAG" > latest.json
+            manifest=latest.json
           fi
           gh release delete main-latest --cleanup-tag --yes || true
-          gh release create main-latest Lumen-macos-universal.dmg "$dmg" $updater \
-            --target "$SHA" --prerelease \
+          gh release create main-latest Lumen-macos-universal.dmg "$dmg" $manifest \
+            --target "$SHA" --prerelease --latest=false \
             --title "Latest main build" \
-            --notes "Automatic build of main at ${SHA}. Universal macOS app (Apple silicon and Intel), ad-hoc signed and not notarized: on first launch, use System Settings → Privacy & Security → Open Anyway."
+            --notes "Rolling build of main, now $TAG. Universal macOS app (Apple silicon and Intel), ad-hoc signed and not notarized: on first launch, use System Settings → Privacy & Security → Open Anyway."

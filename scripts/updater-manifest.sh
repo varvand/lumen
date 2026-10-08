@@ -1,14 +1,16 @@
 #!/bin/sh
 # Write latest.json, the manifest the in-app updater reads, for the main-latest release.
-# Usage: sh scripts/updater-manifest.sh <build-number> <commit-sha> > latest.json
+# Usage: sh scripts/updater-manifest.sh <build-number> <commit-sha> <release-tag> > latest.json
+# The download URL points at the tagged release, which never changes after publishing.
 # The announced version is read from the built app, so it always equals the version the
 # updater signature records (see scripts/release-macos.sh).
 set -eu
 cd "$(dirname "$0")/.."
 build=$1
 sha=$2
+tag=$3
 bundle="src-tauri/target/universal-apple-darwin/release/bundle/macos"
-url="https://github.com/varvand/lumen/releases/download/main-latest/Lumen.app.tar.gz"
+url="https://github.com/varvand/lumen/releases/download/$tag/Lumen.app.tar.gz"
 version=$(plutil -extract CFBundleShortVersionString raw "$bundle/Lumen.app/Contents/Info.plist")
 VERSION="$version" BUILD="$build" SHA="$sha" URL="$url" SIG="$(cat "$bundle/Lumen.app.tar.gz.sig")" node -e '
   const platform = { signature: process.env.SIG, url: process.env.URL };
