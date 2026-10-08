@@ -62,7 +62,7 @@ pub mod commands {
             .join("Claude")
             .join("claude_desktop_config.json"))
     }
-    fn server_path() -> Result<PathBuf> {
+    pub(crate) fn server_path() -> Result<PathBuf> {
         let exe = std::env::current_exe().map_err(|e| e.to_string())?;
         let path = exe.with_file_name(format!("lumen-mcp{}", std::env::consts::EXE_SUFFIX));
         if !path.is_file() {

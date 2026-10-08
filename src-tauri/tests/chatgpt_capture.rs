@@ -10,6 +10,7 @@ fn chatgpt_saves_markdown_to_the_shared_inbox_through_stdio() {
     let mut desktop = Store::open(library.path()).unwrap();
     let mut child = Command::new(env!("CARGO_BIN_EXE_lumen-mcp"))
         .env("LUMEN_LIBRARY", library.path())
+        .env("LUMEN_MCP_COLLECTION", "From ChatGPT")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
@@ -25,7 +26,7 @@ fn chatgpt_saves_markdown_to_the_shared_inbox_through_stdio() {
         serde_json::from_str::<Value>(&line).unwrap()
     };
     let initialized = call(
-        json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"ChatGPT","version":"1"}}}),
+        json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"codex","version":"1"}}}),
     );
     assert!(initialized["result"]["instructions"]
         .as_str()
