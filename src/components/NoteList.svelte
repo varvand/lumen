@@ -27,8 +27,8 @@
 </script>
 
 <section class="note-list" aria-label="Note library">
-  <div class="list-title">
-    <h1>{ui.title}</h1>
+  <div class="list-title" data-tauri-drag-region>
+    <h1 data-tauri-drag-region>{ui.title}</h1>
     <button
       class="icon-button"
       aria-label="New note"

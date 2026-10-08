@@ -10,7 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{ "title": "Lumen", "width": 1440, "height": 940, "minWidth": 820, "minHeight": 600, "backgroundColor": "#f2f4f2" }],
+    "windows": [{ "title": "Lumen", "width": 1440, "height": 940, "minWidth": 820, "minHeight": 600, "backgroundColor": "#f2f4f2", "titleBarStyle": "Overlay", "hiddenTitle": true, "trafficLightPosition": { "x": 20, "y": 24 } }],
     "security": {
       "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; font-src 'self' data:; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'"
     }

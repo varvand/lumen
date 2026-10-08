@@ -6,6 +6,15 @@ import type { Note, Prompt, Screen } from './types';
 export type Modal = 'capture' | 'settings' | 'search' | 'question' | null;
 export type EditorMode = 'write' | 'split' | 'read';
 
+const SIDEBAR_KEY = 'lumen.sidebarCollapsed';
+function storedFlag(key: string) {
+  try {
+    return localStorage.getItem(key) === 'true';
+  } catch {
+    return false;
+  }
+}
+
 const inScreen = (note: Note, screen: Screen, collection = '') =>
   (screen === 'trash'
     ? note.trashed
@@ -25,6 +34,8 @@ class Workspace {
   sort = $state<'updated' | 'title'>('updated');
   mode = $state<EditorMode>('read');
   panel = $state(true);
+  /** The left sidebar shows as an icon rail; remembered per device. */
+  sidebarCollapsed = $state(storedFlag(SIDEBAR_KEY));
   focus = $state(false);
   mobileNav = $state(false);
   modal = $state<Modal>(null);
@@ -63,6 +74,14 @@ class Workspace {
   /** Edit the open note. */
   change(patch: Partial<Note>) {
     if (this.active) library.change(this.active.id, patch);
+  }
+  toggleSidebar() {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    try {
+      localStorage.setItem(SIDEBAR_KEY, String(this.sidebarCollapsed));
+    } catch {
+      /* The layout still toggles; it just is not remembered. */
+    }
   }
   open(modal: Modal) {
     this.modal = modal;

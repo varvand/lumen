@@ -1085,6 +1085,13 @@ button:disabled:hover {
 .focus-mode .document-toolbar {
   padding-left: 30px;
 }
+/* Keep the macOS traffic lights (overlaid at the top left) clear of content. */
+.mac-titlebar .sidebar {
+  padding-top: 64px;
+}
+.mac-titlebar.focus-mode .document-toolbar {
+  padding-left: 92px;
+}
 .focus-mode .document-controls {
   max-width: 940px;
   width: 100%;
@@ -2095,4 +2102,122 @@ dialog::backdrop {
   overflow: hidden;
   display: block;
   min-height: 1.3em;
+}
+
+/* Sidebar header and the collapsed icon rail (toggle with ⌃⌘S). */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 29px;
+}
+.sidebar-header .brand {
+  padding: 0 9px;
+  min-width: 0;
+}
+.sidebar-toggle {
+  color: var(--muted);
+}
+.app-shell {
+  --rail: 64px;
+  transition: grid-template-columns 160ms ease;
+}
+/* The macOS traffic lights overlay the top left, about 20–78px across. */
+.mac-titlebar {
+  --rail: 88px;
+}
+@media (min-width: 801px) {
+  .sidebar-collapsed:not(.focus-mode) {
+    grid-template-columns: var(--rail) 265px minmax(0, 1fr);
+  }
+  .sidebar-collapsed .sidebar {
+    padding-left: 10px;
+    padding-right: 10px;
+    align-items: center;
+    overflow: hidden auto;
+  }
+  .sidebar-collapsed .sidebar-header {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .sidebar-collapsed .sidebar-header .brand {
+    padding: 0;
+  }
+  .sidebar-collapsed .brand-name,
+  .sidebar-collapsed .search-trigger span,
+  .sidebar-collapsed .search-trigger kbd,
+  .sidebar-collapsed .main-nav button > span:not(.nav-count),
+  .sidebar-collapsed .main-nav .nav-count:not(.accent-count),
+  .sidebar-collapsed .collection-heading > span,
+  .sidebar-collapsed .collection-nav button span,
+  .sidebar-collapsed .capture-button span,
+  .sidebar-collapsed .update-button span,
+  .sidebar-collapsed .sidebar-tools .text-button span,
+  .sidebar-collapsed .local-status span:not(.status-dot) {
+    display: none;
+  }
+  .sidebar-collapsed .search-trigger,
+  .sidebar-collapsed .main-nav button,
+  .sidebar-collapsed .collection-nav button,
+  .sidebar-collapsed .capture-button,
+  .sidebar-collapsed .update-button {
+    width: 44px;
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .sidebar-collapsed .main-nav button {
+    position: relative;
+  }
+  /* Due reviews stay visible as a badge on the Practice icon. */
+  .sidebar-collapsed .main-nav .accent-count {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    min-width: 15px;
+    padding: 0 3px;
+    font-size: 9px;
+    line-height: 14px;
+    box-shadow: 0 0 0 1px var(--border);
+  }
+  .sidebar-collapsed .collection-heading {
+    justify-content: center;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .sidebar-collapsed .sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .sidebar-collapsed .sidebar-tools {
+    flex-direction: column;
+    gap: 12px;
+    margin: 16px 0 12px;
+  }
+  .sidebar-collapsed .local-status {
+    justify-content: center;
+  }
+}
+@media (min-width: 1600px) {
+  .sidebar-collapsed:not(.focus-mode) {
+    grid-template-columns: var(--rail) 290px minmax(0, 1fr);
+  }
+}
+@media (min-width: 801px) and (max-width: 1250px) {
+  .sidebar-collapsed:not(.focus-mode) {
+    grid-template-columns: var(--rail) 235px minmax(0, 1fr);
+  }
+}
+@media (min-width: 801px) and (max-width: 1080px) {
+  .sidebar-collapsed:not(.focus-mode) {
+    grid-template-columns: var(--rail) 225px minmax(0, 1fr);
+  }
+}
+/* Below 800px the sidebar is a slide-over, so the toggle has nothing to do. */
+@media (max-width: 800px) {
+  .sidebar-toggle {
+    display: none;
+  }
 }

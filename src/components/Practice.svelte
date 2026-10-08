@@ -66,7 +66,7 @@
 </script>
 
 <div class="practice-page">
-  <header class="page-top">
+  <header class="page-top" data-tauri-drag-region>
     <button class="text-button" onclick={onback}><ArrowLeft size={15} /> Library</button><span
       class="subtle">Practice · Make an idea your own</span
     >

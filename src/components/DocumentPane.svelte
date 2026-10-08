@@ -59,8 +59,8 @@
 </script>
 
 <main class="document-workspace">
-  <header class="document-toolbar">
-    <div class="breadcrumbs">
+  <header class="document-toolbar" data-tauri-drag-region>
+    <div class="breadcrumbs" data-tauri-drag-region>
       <button
         class="icon-button nav-toggle"
         aria-label="Toggle navigation"

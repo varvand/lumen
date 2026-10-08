@@ -16,6 +16,9 @@
   import { themeStyle } from './lib/themes';
   import { updates } from './lib/updates.svelte';
 
+  /** The desktop window draws its content under the macOS traffic lights. */
+  const macTitlebar = native && /Mac/.test(navigator.userAgent);
+
   let importInput: HTMLInputElement;
 
   $effect(() => {
@@ -24,6 +27,17 @@
     root.style.background = background;
     root.style.colorScheme = preferences.active.dark ? 'dark' : 'light';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', sidebar);
+    if (native) {
+      // Match the native window (traffic lights, resize backdrop) to the theme.
+      const theme = preferences.active.dark ? 'dark' : 'light';
+      void import('@tauri-apps/api/window')
+        .then(async ({ getCurrentWindow }) => {
+          const appWindow = getCurrentWindow();
+          await appWindow.setTheme(theme);
+          await appWindow.setBackgroundColor(background);
+        })
+        .catch(() => {});
+    }
   });
 
   async function importFiles() {
@@ -34,6 +48,12 @@
   function shortcut(event: KeyboardEvent) {
     if (!(event.metaKey || event.ctrlKey)) return;
     const key = event.key.toLowerCase();
+    // ⌃⌘S, the macOS convention for showing and hiding a sidebar.
+    if (event.metaKey && event.ctrlKey && key === 's') {
+      event.preventDefault();
+      ui.toggleSidebar();
+      return;
+    }
     if (key === 'k') {
       event.preventDefault();
       ui.open('search');
@@ -101,6 +121,8 @@
   class="app-shell"
   class:focus-mode={ui.focus}
   class:mobile-nav={ui.mobileNav}
+  class:mac-titlebar={macTitlebar}
+  class:sidebar-collapsed={ui.sidebarCollapsed}
   data-theme={preferences.active.dark ? 'dark' : 'light'}
   data-reader={preferences.readerFont}
   style={`--reader-size: ${preferences.fontSize}px; ${themeStyle(preferences.active)}`}
