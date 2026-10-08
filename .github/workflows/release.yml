@@ -1,33 +1,38 @@
 name: Main build
 
-# Build the macOS app from main after CI succeeds. Each build is published as a permanent,
-# tagged release (v<version>), and the rolling "main-latest" pre-release is replaced so its
-# stable links (the DMG and the updater's latest.json) always point at the newest build.
+# Build macOS and Linux apps from main after CI succeeds. Each build is published as a
+# permanent, tagged release (v<version>), and the rolling "main-latest" pre-release is replaced
+# so its stable links (the downloads and the updater's latest.json) point at the newest build.
+# A manual run (workflow_dispatch) builds both platforms on any branch without publishing.
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: main-build
+  group: main-build-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  # Becomes the patch version: <major>.<minor>.<run number>.
+  LUMEN_BUILD: ${{ github.run_number }}
 
 jobs:
   macos:
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: macos-latest
-    env:
-      SHA: ${{ github.event.workflow_run.head_sha }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.SHA }}
-          # Full history and tags, for release notes since the previous version.
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -41,26 +46,96 @@ jobs:
       - run: npm ci
       - name: Build universal, ad-hoc signed app and DMG
         env:
-          # Becomes the patch version: <major>.<minor>.<run number>.
-          LUMEN_BUILD: ${{ github.run_number }}
-          # Signs Lumen.app.tar.gz for in-app updates; skipped when the secret is absent.
+          # Signs the update archives; skipped when the secret is absent.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: npm run desktop:release
-      - name: Publish the tagged release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - id: version
+        run: echo "version=$(sh scripts/build-version.sh)" >> "$GITHUB_OUTPUT"
+      - name: Collect release files
         run: |
           set -eu
-          macos=src-tauri/target/universal-apple-darwin/release/bundle/macos
-          version=$(plutil -extract CFBundleShortVersionString raw "$macos/Lumen.app/Contents/Info.plist")
-          tag="v$version"
+          bundle=src-tauri/target/universal-apple-darwin/release/bundle
+          mkdir release
+          cp "$bundle"/dmg/*.dmg release/
+          for f in "$bundle"/macos/Lumen.app.tar.gz "$bundle"/macos/Lumen.app.tar.gz.sig; do
+            if [ -f "$f" ]; then cp "$f" release/; fi
+          done
+          ls -l release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: release/
+          if-no-files-found: error
+
+  linux:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    # The oldest supported runner: binaries built against its glibc run on more distributions.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
+            librsvg2-dev libxdo-dev libssl-dev build-essential file patchelf
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - name: Build AppImage and .deb
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: sh scripts/release-linux.sh
+      - name: Collect release files
+        run: |
+          set -eu
+          bundle=src-tauri/target/release/bundle
+          mkdir release
+          cp "$bundle"/appimage/*.AppImage "$bundle"/deb/*.deb release/
+          for f in "$bundle"/appimage/*.AppImage.sig "$bundle"/deb/*.deb.sig; do
+            if [ -f "$f" ]; then cp "$f" release/; fi
+          done
+          ls -l release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: release/
+          if-no-files-found: error
+
+  publish:
+    needs: [macos, linux]
+    # Publish only real builds of main. A failed Linux build does not hold back macOS.
+    if: always() && github.event_name == 'workflow_run' && needs.macos.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.macos.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+          # Full history and tags, for release notes since the previous version.
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release
+          merge-multiple: true
+      - name: Publish the tagged release
+        run: |
+          set -eu
+          tag="v$VERSION"
           echo "TAG=$tag" >> "$GITHUB_ENV"
-          dmg=$(ls src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
-          assets="$dmg"
-          if [ -f "$macos/Lumen.app.tar.gz.sig" ]; then
-            assets="$assets $macos/Lumen.app.tar.gz $macos/Lumen.app.tar.gz.sig"
-          fi
+          ls -l release
           previous=$(git tag --list 'v*' --sort=-v:refname | grep -vx "$tag" | head -1 || true)
           {
             if [ -n "$previous" ]; then
@@ -71,30 +146,39 @@ jobs:
               echo "First tagged build."
             fi
             echo
-            echo "Universal macOS app (Apple silicon and Intel), ad-hoc signed and not notarized: on first launch, use System Settings → Privacy & Security → Open Anyway."
+            echo "- macOS: universal DMG (Apple silicon and Intel), ad-hoc signed and not notarized. On first launch, use System Settings → Privacy & Security → Open Anyway."
+            if ls release/*.AppImage >/dev/null 2>&1; then
+              echo "- Linux (x86_64): AppImage (make it executable, then run it) or .deb for Debian and Ubuntu."
+            else
+              echo "- Linux: not included in this build."
+            fi
           } > notes.md
           if gh release view "$tag" >/dev/null 2>&1; then
             # A re-run of the same build: refresh the assets, keep the release.
-            gh release upload "$tag" $assets --clobber
+            gh release upload "$tag" release/* --clobber
           else
-            gh release create "$tag" $assets --target "$SHA" --title "Lumen $version" \
+            gh release create "$tag" release/* --target "$SHA" --title "Lumen $VERSION" \
               --notes-file notes.md --latest
           fi
       - name: Update main-latest
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
-          dmg=$(ls src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
-          cp "$dmg" Lumen-macos-universal.dmg
+          mkdir latest
+          cp release/*.dmg latest/Lumen-macos-universal.dmg
+          for f in release/*.AppImage; do
+            if [ -f "$f" ]; then cp "$f" latest/Lumen-linux-x86_64.AppImage; fi
+          done
+          for f in release/*.deb; do
+            if [ -f "$f" ]; then cp "$f" latest/Lumen-linux-amd64.deb; fi
+          done
           # The updater manifest; installed apps poll main-latest/latest.json (see README → Updates).
-          manifest=
-          if [ -f src-tauri/target/universal-apple-darwin/release/bundle/macos/Lumen.app.tar.gz.sig ]; then
-            sh scripts/updater-manifest.sh "${{ github.run_number }}" "$SHA" "$TAG" > latest.json
-            manifest=latest.json
+          if ls release/*.sig >/dev/null 2>&1; then
+            node scripts/updater-manifest.mjs "$VERSION" "$TAG" \
+              "Build ${LUMEN_BUILD} of main (${SHA:0:7})." release > latest/latest.json
           fi
+          ls -l latest
           gh release delete main-latest --cleanup-tag --yes || true
-          gh release create main-latest Lumen-macos-universal.dmg "$dmg" $manifest \
+          gh release create main-latest latest/* \
             --target "$SHA" --prerelease --latest=false \
             --title "Latest main build" \
-            --notes "Rolling build of main, now $TAG. Universal macOS app (Apple silicon and Intel), ad-hoc signed and not notarized: on first launch, use System Settings → Privacy & Security → Open Anyway."
+            --notes "Rolling build of main, now $TAG. See that release for notes and versioned downloads."

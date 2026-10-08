@@ -4,7 +4,12 @@ A Mac-first Markdown editor and learning workbench. Svelte 5, CodeMirror 6, KaTe
 
 ## Download
 
-The latest build of `main` for macOS (universal, ad-hoc signed): [Lumen-macos-universal.dmg](https://github.com/varvand/lumen/releases/download/main-latest/Lumen-macos-universal.dmg). It is rebuilt automatically after CI passes on `main`. See [first launch](#sharing-a-macos-build-without-an-apple-developer-account) for opening an app that is not notarized.
+The latest build of `main`, rebuilt automatically after CI passes:
+
+- macOS (universal, ad-hoc signed): [Lumen-macos-universal.dmg](https://github.com/varvand/lumen/releases/download/main-latest/Lumen-macos-universal.dmg). See [first launch](#sharing-a-macos-build-without-an-apple-developer-account) for opening an app that is not notarized.
+- Linux (x86_64): [Lumen-linux-x86_64.AppImage](https://github.com/varvand/lumen/releases/download/main-latest/Lumen-linux-x86_64.AppImage) for most distributions (`chmod +x` it, then run it), or [Lumen-linux-amd64.deb](https://github.com/varvand/lumen/releases/download/main-latest/Lumen-linux-amd64.deb) for Debian and Ubuntu. Linux builds need WebKitGTK 4.1, which current distributions include.
+
+Every version is also kept as a [tagged release](https://github.com/varvand/lumen/releases).
 
 ## Run
 
@@ -45,7 +50,7 @@ The local single-architecture app bundle from `npm run desktop:build` is written
 
 The desktop app updates itself from the rolling `main-latest` release, which CI rebuilds after every green push to `main`. Lumen checks `latest.json` on that release at launch and every six hours. When a newer build exists, an **Update available** button appears in the sidebar (and in Settings → Updates). Clicking it saves pending edits, downloads `Lumen.app.tar.gz`, verifies its signature, replaces the app, and relaunches. Nothing installs without that click. Development builds and the browser preview never check.
 
-Every build of `main` is also published as a permanent release tagged `v<version>` (for example `v0.1.7`), with the DMG, the signed update archive, and the commits since the previous version. `main-latest` is a rolling pointer: its `latest.json` names the newest version and links to that tagged release's `Lumen.app.tar.gz`, and its DMG is a copy of the newest one.
+Every build of `main` is also published as a permanent release tagged `v<version>` (for example `v0.1.7`), with the macOS DMG, the Linux AppImage and .deb, their signed update files, and the commits since the previous version. The AppImage updates itself in place. A .deb install updates through the same button and asks for an administrator password (via `pkexec`) to install the new package. `main-latest` is a rolling pointer: its `latest.json` names the newest version and links to that tagged release's `Lumen.app.tar.gz`, and its DMG is a copy of the newest one.
 
 CI versions each build of `main` as `<major>.<minor>.<run number>` from `tauri.conf.json` and the Main build workflow's run number, for example `0.1.42`. The updater installs a build only when the version in its signature matches the version `latest.json` announces, so the build number must be part of the app's real version. Because CI sets the patch number, bump the minor or major version in `tauri.conf.json` to mark a release. A manual patch bump has no effect. Run numbers restart at 1 if the workflow file is renamed or recreated, which would make new builds look older than installed ones; bump the minor version if that happens. Local builds keep the configured version (`0.1.0`), so they treat every CI build as newer.
 
