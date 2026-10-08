@@ -2,7 +2,7 @@
 
 ## Use your subscription now
 
-1. In Lumen, open **Capture an idea → Connect ChatGPT** and copy the summary prompt.
+1. In Lumen, open **Settings → Chat apps** and copy the summary prompt.
 2. Paste it into the ChatGPT conversation you want to keep.
 3. Download the resulting Markdown or copy its text.
 4. Import the `.md` file or paste it into Lumen's Capture dialog. It arrives in Inbox.
