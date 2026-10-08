@@ -22,10 +22,12 @@ test('imports an Obsidian vault into collections', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Show notes' }).click();
 
   const collections = page.getByRole('navigation', { name: 'Collections' });
-  await expect(collections.getByRole('button', { name: 'Physics / Waves' })).toBeVisible();
-  await expect(collections.getByRole('button', { name: 'Study Vault' })).toBeVisible();
+  await expect(
+    collections.getByRole('button', { name: 'Physics / Waves', exact: true }),
+  ).toBeVisible();
+  await expect(collections.getByRole('button', { name: 'Study Vault', exact: true })).toBeVisible();
 
-  await collections.getByRole('button', { name: 'Physics / Waves' }).click();
+  await collections.getByRole('button', { name: 'Physics / Waves', exact: true }).click();
   await page
     .getByRole('region', { name: 'Note library' })
     .getByRole('heading', { name: 'Interference' })

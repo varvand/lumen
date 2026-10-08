@@ -1,10 +1,11 @@
 <script lang="ts">
   import { ArrowUpRight, DownloadSimple, FolderSimple, PencilSimple, Plus } from 'phosphor-svelte';
+  import Select from '../Select.svelte';
   import Modal from '../Modal.svelte';
   import ThemeEditor from '../ThemeEditor.svelte';
   import ChatAppsSettings from '../ChatAppsSettings.svelte';
   import { library } from '../../lib/library.svelte';
-  import { preferences, UI_SCALE, type ReaderFont } from '../../lib/preferences.svelte';
+  import { preferences, UI_SCALE } from '../../lib/preferences.svelte';
   import { BUILTIN_THEMES, newThemeId, type ThemeDefinition } from '../../lib/themes';
   import { ui } from '../../lib/ui.svelte';
   import { native } from '../../lib/storage';
@@ -76,16 +77,18 @@
   </div>
   <div class="settings-section">
     <h3>Text</h3>
-    <label class="setting-row"
-      >Document typeface<select
-        class="select-input"
+    <div class="setting-row">
+      <span class="setting-label">Document typeface</span><Select
+        label="Document typeface"
         value={preferences.readerFont}
-        onchange={(e) => preferences.set({ readerFont: e.currentTarget.value as ReaderFont })}
-        ><option value="serif">Newsreader · Serif</option><option value="sans"
-          >DM Sans · Sans serif</option
-        ></select
-      ></label
-    ><label class="setting-row"
+        onchange={(readerFont) => preferences.set({ readerFont })}
+        options={[
+          { value: 'serif', label: 'Newsreader · Serif' },
+          { value: 'sans', label: 'DM Sans · Sans serif' },
+        ]}
+      />
+    </div>
+    <label class="setting-row"
       >Interface text <span>{Math.round(preferences.uiScale * 100)}% · ⌘+ ⌘− ⌘0</span><input
         aria-label="Interface text size"
         type="range"

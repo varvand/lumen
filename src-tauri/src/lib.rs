@@ -1,4 +1,5 @@
 pub mod assistant;
+pub mod chatgpt;
 pub mod connect;
 pub mod protocol;
 pub mod store;
@@ -8,6 +9,7 @@ pub mod vault;
 #[cfg(feature = "desktop")]
 mod desktop {
     use super::assistant::commands as assistant;
+    use super::chatgpt::commands as chatgpt;
     use super::connect::commands as connect;
     use super::store::{self, Attempt, Library, Note, Result, Store};
     use super::updates::commands as updates;
@@ -80,6 +82,9 @@ mod desktop {
                 connect::claude_status,
                 connect::connect_claude,
                 connect::disconnect_claude,
+                chatgpt::chatgpt_status,
+                chatgpt::connect_chatgpt,
+                chatgpt::disconnect_chatgpt,
                 super::vault::read_markdown_folder
             ])
             .run(tauri::generate_context!())

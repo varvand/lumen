@@ -3,7 +3,8 @@
   import { Brain, CaretRight, Plus, X } from 'phosphor-svelte';
   import { ui } from '../lib/ui.svelte';
   import { headings } from '../lib/markdown';
-  import type { Intent, Note } from '../lib/types';
+  import Select from './Select.svelte';
+  import type { Note } from '../lib/types';
 
   let { note }: { note: Note } = $props();
   const outline = $derived(headings(note.body));
@@ -23,7 +24,7 @@
     <span>IN THIS NOTE</span><button
       class="icon-button small"
       aria-label="Close note details"
-      onclick={() => (ui.panel = false)}><X size={13} /></button
+      onclick={() => ui.togglePanel(false)}><X size={13} /></button
     >
   </div>
   <nav class="outline" aria-label="Document outline">
@@ -40,15 +41,16 @@
       <h3>Make it stick</h3>
     </div>
     <p class="helper">Choose what you want from this idea.</p>
-    <select
-      class="select-input"
-      aria-label="Learning goal"
+    <Select
+      label="Learning goal"
       value={note.intent}
-      onchange={(e) => ui.change({ intent: e.currentTarget.value as Intent })}
-      ><option value="reference">Keep as a reference</option><option value="remember"
-        >Remember & explain</option
-      ><option value="apply">Learn to apply</option></select
-    >
+      onchange={(intent) => ui.change({ intent })}
+      options={[
+        { value: 'reference', label: 'Keep as a reference' },
+        { value: 'remember', label: 'Remember & explain' },
+        { value: 'apply', label: 'Learn to apply' },
+      ]}
+    />
     {#if note.intent !== 'reference'}<div class="prompt-list">
         {#each note.prompts as prompt}<button onclick={() => ui.editQuestion(prompt)}
             ><span>{prompt.kind}</span>{prompt.question}<CaretRight size={12} /></button

@@ -13,10 +13,20 @@ const LEGACY_TOOL: &str = "save_learning_note";
 #[derive(Default)]
 pub struct Session {
     client: Option<String>,
+    collection: Option<String>,
 }
 impl Session {
+    pub fn with_collection(collection: Option<String>) -> Self {
+        Self {
+            client: None,
+            collection: collection.filter(|c| !c.trim().is_empty() && c.len() <= 100),
+        }
+    }
     /// Default collection for notes from this client, e.g. "From Claude".
     fn collection(&self) -> String {
+        if let Some(collection) = &self.collection {
+            return collection.clone();
+        }
         let client = self.client.as_deref().unwrap_or_default().to_lowercase();
         let source = if client.contains("claude") {
             "Claude"

@@ -1,4 +1,5 @@
 import { storage } from './storage';
+import { collectionTree } from './collections';
 import { latestAttempts, practiceQueue } from './learning';
 import type { Attempt, Note } from './types';
 
@@ -32,6 +33,7 @@ class LibraryStore {
     ].sort(),
   );
   latest = $derived(latestAttempts(this.attempts));
+  folders = $derived(collectionTree(this.notes));
   due = $derived(practiceQueue(this.notes, this.latest));
 
   #timers = new Map<string, ReturnType<typeof setTimeout>>();

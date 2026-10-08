@@ -8,6 +8,7 @@ export const PROVIDER_NAMES: Record<Provider, string> = { claude: 'Claude', code
 export interface TutorMessage {
   role: 'user' | 'assistant';
   text: string;
+  provider?: Provider;
 }
 export interface TutorCard {
   note: Pick<Note, 'title' | 'body'>;

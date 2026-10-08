@@ -5,6 +5,7 @@
   import { ui } from '../lib/ui.svelte';
   import { native } from '../lib/storage';
   import { capturePrompt } from '../lib/seeds';
+  import ChatGPTConnection from './ChatGPTConnection.svelte';
 
   interface ClaudeStatus {
     installed: boolean;
@@ -40,10 +41,11 @@
 <div class="settings-section">
   <h3>Chat apps</h3>
   <p class="helper">
-    The chat app writes the summary; Lumen only receives the note and cannot read your chats or
-    library.
+    The chat app writes the summary. The connection can add notes to Inbox; it cannot read your
+    other notes or chat history.
   </p>
-  <span class="chat-app-name">ChatGPT</span>
+  <ChatGPTConnection />
+  <span class="chat-app-name">Manual Markdown import</span>
   <p class="helper">
     Paste this prompt into a conversation you want to keep, then paste the reply into Capture or
     import the .md file it gives you.
@@ -53,22 +55,33 @@
       ><Copy size={15} />Copy summary prompt</button
     >
   </div>
-  <details class="chat-app-details">
-    <summary>View prompt</summary>
+  <details class="chat-app-details" open={ui.isExpanded('settings:prompt', false)}>
+    <summary
+      onclick={(e) => {
+        e.preventDefault();
+        ui.setExpanded('settings:prompt', !ui.isExpanded('settings:prompt', false));
+      }}>View prompt</summary
+    >
     <pre class="prompt-copy">{capturePrompt}</pre>
   </details>
-  <details class="chat-app-details">
-    <summary>Advanced: connect the save tool</summary>
+  <details class="chat-app-details" open={ui.isExpanded('settings:connection', false)}>
+    <summary
+      onclick={(e) => {
+        e.preventDefault();
+        ui.setExpanded('settings:connection', !ui.isExpanded('settings:connection', false));
+      }}>Advanced: connect the save tool</summary
+    >
     <p class="helper">
-      The included <code>lumen-mcp</code> companion exposes a <code>save_note</code> tool. For Codex,
-      connect its stdio transport; for ChatGPT, bridge it with a private MCP tunnel (see docs/chatgpt.md).
+      For other local MCP clients, register the bundled companion as a stdio server using this
+      executable path. It exposes the <code>save_note</code> tool.
     </p>
     <div class="code-command">
-      <code>npm run mcp</code><button
+      <code>{status?.serverPath || 'Open Lumen desktop to find the bundled companion'}</code><button
         class="icon-button"
         title="Copy command"
         aria-label="Copy MCP command"
-        onclick={() => ui.copy('npm run mcp')}><Copy size={15} /></button
+        disabled={!status?.serverPath}
+        onclick={() => ui.copy(status?.serverPath || '')}><Copy size={15} /></button
       >
     </div>
   </details>

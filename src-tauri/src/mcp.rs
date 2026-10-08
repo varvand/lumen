@@ -7,7 +7,8 @@ use std::io::{self, BufRead, Write};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = default_path()?;
     let mut store = Store::open(&root)?;
-    let mut session = protocol::Session::default();
+    let mut session =
+        protocol::Session::with_collection(std::env::var("LUMEN_MCP_COLLECTION").ok());
     eprintln!("Lumen MCP ready. Library: {}", root.display());
     let stdin = io::stdin();
     let mut stdout = io::stdout().lock();

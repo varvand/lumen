@@ -67,7 +67,9 @@ Install from the DMG into Applications before updating. An app run directly from
 - Debounced autosave, flush on note changes and desktop close, atomic file replacement, and revision checks for conflicting saves.
 - Markdown file import, paste capture, and export.
 - Recall, explanation, and application questions with hidden suggested answers, self-assessed attempts, and adaptive review dates.
-- A Rust stdio MCP companion that saves on-demand summaries from an existing ChatGPT/Codex conversation. See [connection setup](docs/chatgpt.md).
+- One-click local MCP registration for ChatGPT desktop and Claude Desktop. Ask the chat app to send a conversation summary to Lumen's Inbox. See [connection setup](docs/chatgpt.md).
+
+Collections can contain subfolders. Hover a folder and click its plus button to add one, or enter a path such as `Physics / Waves` when creating a collection. Parent folders include their descendants' notes; new notes stay in the folder you're viewing. Each new collection starts with a blank note. The sidebar, note list, details panel, and folder disclosure states are remembered on this device. In the collapsed sidebar, one Collections button opens the folder tree.
 
 ## Data
 
@@ -91,7 +93,7 @@ See [the evidence and evaluation plan](docs/learning-science.md). There are no c
 
 ## ChatGPT and privacy
 
-Lumen makes no inference requests and requires no model API key. The user asks ChatGPT to generate the summary in their existing conversation. The MCP companion only creates notes in the local inbox. The app has no automatic chat-history access. Connecting the companion to ChatGPT requires account-side configuration and a reachable MCP connection; the connector is not installed automatically.
+Lumen makes no inference requests and requires no model API key. ChatGPT generates the summary in your existing conversation; the local MCP companion creates a Markdown note in Inbox. The app has no automatic chat-history access. The ChatGPT desktop connection runs entirely on the same computer and needs no tunnel or hosted Lumen service. Connect it in Settings, then restart the Lumen MCP server in ChatGPT to load the registration. Hosted conversations without local tool access use the manual Markdown workflow.
 
 Fonts, editor, and math assets are bundled. Markdown HTML is sanitized before rendering. External links open only when activated. No analytics are included.
 

@@ -3,7 +3,8 @@ name: Main build
 # Build macOS and Linux apps from main after CI succeeds. Each build is published as a
 # permanent, tagged release (v<version>), and the rolling "main-latest" pre-release is replaced
 # so its stable links (the downloads and the updater's latest.json) point at the newest build.
-# A manual run (workflow_dispatch) builds both platforms on any branch without publishing.
+# Builds run for main only: dev and feature branches get CI checks but never a build.
+# A manual run (workflow_dispatch) on main builds both platforms without publishing.
 on:
   workflow_run:
     workflows: [CI]
@@ -25,7 +26,7 @@ env:
 
 jobs:
   macos:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main')
     runs-on: macos-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -69,7 +70,7 @@ jobs:
           if-no-files-found: error
 
   linux:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main')
     # The oldest supported runner: binaries built against its glibc run on more distributions.
     runs-on: ubuntu-22.04
     steps:

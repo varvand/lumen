@@ -37,5 +37,6 @@ rusqlite = { version = "0.37", features = ["bundled"] }
 dirs = "6"
 tempfile = "3"
 uuid = { version = "1", features = ["v4", "v5"] }
+toml_edit = "0.25"
 tauri-plugin-updater = { version = "2", optional = true }
 

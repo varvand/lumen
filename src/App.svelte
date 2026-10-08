@@ -90,7 +90,6 @@
 
   onMount(() => {
     ui.importPicker = importInput;
-    ui.panel = window.innerWidth >= 1300;
     preferences.load();
     updates.start();
     void library.refresh().finally(() => {

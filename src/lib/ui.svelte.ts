@@ -1,6 +1,7 @@
 import { library } from './library.svelte';
 import { parseImport } from './markdown';
 import { storage } from './storage';
+import { inCollection } from './collections';
 import type { Note, Prompt, Screen } from './types';
 
 export type Modal = 'capture' | 'settings' | 'search' | 'question' | 'obsidian' | null;
@@ -8,11 +9,29 @@ export type EditorMode = 'write' | 'split' | 'read';
 
 const SIDEBAR_KEY = 'lumen.sidebarCollapsed';
 const LIST_KEY = 'lumen.listCollapsed';
-function storedFlag(key: string) {
+const PANEL_KEY = 'lumen.detailsOpen';
+const DISCLOSURES_KEY = 'lumen.disclosures';
+function storedFlag(key: string, fallback = false) {
   try {
-    return localStorage.getItem(key) === 'true';
+    const stored = localStorage.getItem(key);
+    return stored === null ? fallback : stored === 'true';
   } catch {
-    return false;
+    return fallback;
+  }
+}
+function storedDisclosures(): Record<string, boolean> {
+  try {
+    const value = JSON.parse(localStorage.getItem(DISCLOSURES_KEY) || '{}');
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+function remember(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* Layout changes still work when device storage is unavailable. */
   }
 }
 
@@ -20,7 +39,7 @@ const inScreen = (note: Note, screen: Screen, collection = '') =>
   (screen === 'trash'
     ? note.trashed
     : !note.trashed && (screen === 'inbox' ? note.inbox : !note.inbox)) &&
-  (!collection || note.collection === collection);
+  (!collection || inCollection(note.collection, collection));
 
 /**
  * Workspace state and the actions that coordinate it with the library: which screen and
@@ -34,7 +53,8 @@ class Workspace {
   query = $state('');
   sort = $state<'updated' | 'title'>('updated');
   mode = $state<EditorMode>('read');
-  panel = $state(true);
+  panel = $state(storedFlag(PANEL_KEY, typeof window !== 'undefined' && window.innerWidth >= 1300));
+  disclosures = $state(storedDisclosures());
   /** The left sidebar shows as an icon rail; remembered per device. */
   sidebarCollapsed = $state(storedFlag(SIDEBAR_KEY));
   /** The note list column is hidden, leaving more room for the open note. */
@@ -80,19 +100,22 @@ class Workspace {
   }
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;
-    try {
-      localStorage.setItem(SIDEBAR_KEY, String(this.sidebarCollapsed));
-    } catch {
-      /* The layout still toggles; it just is not remembered. */
-    }
+    remember(SIDEBAR_KEY, String(this.sidebarCollapsed));
   }
   toggleList(collapsed = !this.listCollapsed) {
     this.listCollapsed = collapsed;
-    try {
-      localStorage.setItem(LIST_KEY, String(collapsed));
-    } catch {
-      /* The layout still toggles; it just is not remembered. */
-    }
+    remember(LIST_KEY, String(collapsed));
+  }
+  togglePanel(open = !this.panel) {
+    this.panel = open;
+    remember(PANEL_KEY, String(open));
+  }
+  isExpanded(id: string, fallback = true) {
+    return typeof this.disclosures[id] === 'boolean' ? this.disclosures[id] : fallback;
+  }
+  setExpanded(id: string, open: boolean) {
+    this.disclosures = { ...this.disclosures, [id]: open };
+    remember(DISCLOSURES_KEY, JSON.stringify(this.disclosures));
   }
   /** Open a list the user picked, showing the note list if it was hidden. */
   browse(next: Screen, collection = '') {
@@ -141,6 +164,8 @@ class Workspace {
     await this.select(note.id);
   }
   async createNote(data: Partial<Note> = {}) {
+    const selectedCollection = this.collection;
+    const selectedScreen = this.screen;
     const now = Date.now();
     const note: Note = {
       id: crypto.randomUUID(),
@@ -150,7 +175,7 @@ class Workspace {
       tags: [],
       intent: 'reference',
       pinned: false,
-      inbox: false,
+      inbox: selectedScreen === 'inbox',
       trashed: false,
       createdAt: now,
       updatedAt: now,
@@ -161,8 +186,12 @@ class Workspace {
     };
     try {
       const saved = await library.create(note);
-      this.screen = saved.inbox ? 'inbox' : 'library';
-      this.collection = '';
+      this.screen = saved.trashed ? 'trash' : saved.inbox ? 'inbox' : 'library';
+      this.collection =
+        selectedScreen === this.screen &&
+        (!selectedCollection || inCollection(saved.collection, selectedCollection))
+          ? selectedCollection
+          : '';
       this.query = '';
       this.activeId = saved.id;
       this.mode = saved.body ? 'read' : 'write';
