@@ -14,6 +14,7 @@
   import { ui } from './lib/ui.svelte';
   import { native } from './lib/storage';
   import { themeStyle } from './lib/themes';
+  import { updates } from './lib/updates.svelte';
 
   let importInput: HTMLInputElement;
 
@@ -58,6 +59,7 @@
     ui.importPicker = importInput;
     ui.panel = window.innerWidth >= 1300;
     preferences.load();
+    updates.start();
     void library.refresh().finally(() => {
       library.loading = false;
       if (!library.live.some((n) => n.id === ui.activeId)) ui.activeId = library.live[0]?.id || '';
@@ -86,6 +88,7 @@
     return () => {
       unlisten?.();
       ui.dispose();
+      updates.dispose();
       library.dispose();
       window.removeEventListener('beforeunload', beforeUnload);
       window.removeEventListener('focus', refresh);

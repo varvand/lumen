@@ -40,6 +40,16 @@ After that, Lumen opens normally. Only share builds with people who trust you as
 
 The local single-architecture app bundle from `npm run desktop:build` is written to `src-tauri/target/release/bundle/macos/Lumen.app`. Release distribution to other computers needs Apple signing and notarization. This project does not include signing credentials. The Rust core and frontend are portable; Windows and Linux builds need platform prerequisites and validation on those systems. Override bundle targets when building there, for example `npm run tauri build -- --bundles nsis` on Windows or `--bundles appimage,deb` on Linux.
 
+### Updates
+
+The desktop app updates itself from the rolling `main-latest` release, which CI rebuilds after every green push to `main`. Lumen checks `latest.json` on that release at launch and every six hours. When a newer build exists, an **Update available** button appears in the sidebar (and in Settings → Updates). Clicking it saves pending edits, downloads `Lumen.app.tar.gz`, verifies its signature, replaces the app, and relaunches. Nothing installs without that click. Development builds and the browser preview never check.
+
+Builds of one version are ordered by their CI run number: CI compiles it into the app as `LUMEN_BUILD` and publishes it in `latest.json` as semver build metadata (`0.1.0+42`).
+
+Updates are signed with a minisign key, separate from Apple code signing. The public key is in `src-tauri/tauri.conf.json`. CI reads the private key and its password from the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` repository secrets. Keep an offline backup of the private key: if it is lost, installed apps reject every future update, and users must reinstall from a DMG once a new key is configured.
+
+Install from the DMG into Applications before updating. An app run directly from the mounted DMG cannot replace itself.
+
 ## Included
 
 - Markdown source editor with undo/redo, search, formatting shortcuts, and line wrapping.

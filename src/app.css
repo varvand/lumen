@@ -239,6 +239,28 @@ button:disabled:hover {
   justify-content: space-between;
   margin: 19px 3px 10px;
 }
+.update-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 9px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+.update-button:hover:not(:disabled) {
+  color: var(--background);
+  background: var(--accent);
+}
+.setting-row .primary-button,
+.setting-row .secondary-button {
+  margin-left: auto;
+}
 .local-status {
   display: flex;
   gap: 6px;

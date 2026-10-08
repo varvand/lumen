@@ -9,10 +9,12 @@
     FolderSimple,
     GearSix,
     Trash,
+    ArrowCircleUp,
   } from 'phosphor-svelte';
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { native } from '../lib/storage';
+  import { updates } from '../lib/updates.svelte';
 
   async function newCollection() {
     const note = await ui.createNote({ collection: 'New collection' });
@@ -66,6 +68,21 @@
       >{/each}
   </nav>
   <div class="sidebar-bottom">
+    {#if updates.available}<button
+        class="update-button"
+        disabled={updates.status === 'downloading' || updates.status === 'installing'}
+        title={updates.error || `Install Lumen ${updates.available.version} and relaunch`}
+        onclick={() => updates.install()}
+        ><ArrowCircleUp size={17} /><span
+          >{updates.status === 'downloading'
+            ? `Downloading${updates.progress === null ? '…' : ` ${Math.round(updates.progress * 100)}%`}`
+            : updates.status === 'installing'
+              ? 'Installing…'
+              : updates.status === 'error'
+                ? 'Update failed · retry'
+                : 'Update available'}</span
+        ></button
+      >{/if}
     <button class="capture-button" onclick={() => ui.open('capture')}
       ><Plus size={17} /><span>Capture an idea</span></button
     >

@@ -7,6 +7,7 @@
   import { BUILTIN_THEMES, newThemeId, type ThemeDefinition } from '../../lib/themes';
   import { ui } from '../../lib/ui.svelte';
   import { native } from '../../lib/storage';
+  import { formatRelease, updates } from '../../lib/updates.svelte';
 
   const [light, dark] = BUILTIN_THEMES;
   let editing = $state<ThemeDefinition | null>(null);
@@ -106,6 +107,30 @@
         ><FolderSimple size={16} />Open library folder</button
       >{/if}
   </div>
+  {#if updates.enabled}<div class="settings-section">
+      <h3>Updates</h3>
+      <div class="setting-row">
+        Lumen {updates.current ? formatRelease(updates.current) : ''}
+        {#if updates.available}<button
+            class="primary-button"
+            disabled={updates.status === 'downloading' || updates.status === 'installing'}
+            onclick={() => updates.install()}
+            >{updates.status === 'downloading' || updates.status === 'installing'
+              ? 'Installing…'
+              : `Install ${formatRelease(updates.available)}`}</button
+          >{:else}<button
+            class="secondary-button"
+            disabled={updates.status === 'checking'}
+            onclick={() => updates.check()}
+            >{updates.status === 'checking' ? 'Checking…' : 'Check for updates'}</button
+          >{/if}
+      </div>
+      <p class="helper">
+        {#if updates.status === 'error'}{updates.error}{:else if updates.status === 'current'}You
+          have the latest build.{:else}Lumen checks the latest build of the main branch every few
+          hours. Updates install only when you choose, then Lumen relaunches.{/if}
+      </p>
+    </div>{/if}
   <div class="settings-section">
     <h3>Built for understanding</h3>
     <p class="helper">

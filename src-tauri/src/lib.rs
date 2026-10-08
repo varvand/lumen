@@ -1,9 +1,11 @@
 pub mod protocol;
 pub mod store;
+pub mod updates;
 
 #[cfg(feature = "desktop")]
 mod desktop {
     use super::store::{self, Attempt, Library, Note, Result, Store};
+    use super::updates::commands as updates;
     use std::path::PathBuf;
     use std::sync::Mutex;
 
@@ -54,6 +56,8 @@ mod desktop {
         tauri::Builder::default()
             .plugin(tauri_plugin_dialog::init())
             .plugin(tauri_plugin_opener::init())
+            .plugin(tauri_plugin_updater::Builder::new().build())
+            .manage(updates::Pending::default())
             .manage(AppState {
                 path,
                 store: Mutex::new(None),
@@ -62,7 +66,10 @@ mod desktop {
                 load_library,
                 save_note,
                 record_attempt,
-                export_markdown
+                export_markdown,
+                updates::app_version,
+                updates::check_update,
+                updates::install_update
             ])
             .run(tauri::generate_context!())
             .expect("Lumen could not start");

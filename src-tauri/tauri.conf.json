@@ -15,5 +15,11 @@
       "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; font-src 'self' data:; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'"
     }
   },
-  "bundle": { "active": true, "targets": ["app", "dmg"], "category": "Education", "shortDescription": "A quiet space for writing and learning", "macOS": { "minimumSystemVersion": "11.0", "signingIdentity": "-" }, "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"] }
+  "bundle": { "active": true, "targets": ["app", "dmg"], "category": "Education", "shortDescription": "A quiet space for writing and learning", "macOS": { "minimumSystemVersion": "11.0", "signingIdentity": "-" }, "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"] },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFCODE1NURBQjNGOEM0RkIKUldUN3hQaXoybFdCRzZUNW9pbjF5K0Z0ZUJaTG53WVUyQzlSME9hYTk1UlltQ0k1MzJyTGZKY0YK",
+      "endpoints": ["https://github.com/varvand/lumen/releases/download/main-latest/latest.json"]
+    }
+  }
 }

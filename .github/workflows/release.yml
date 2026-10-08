@@ -37,6 +37,12 @@ jobs:
           workspaces: src-tauri
       - run: npm ci
       - name: Build universal, ad-hoc signed app and DMG
+        env:
+          # Stamped into the app so the updater can order builds of one version.
+          LUMEN_BUILD: ${{ github.run_number }}
+          # Signs Lumen.app.tar.gz for in-app updates; skipped when the secret is absent.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: npm run desktop:release
       - name: Publish main-latest pre-release
         env:
@@ -45,8 +51,15 @@ jobs:
           set -eu
           dmg=$(ls src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
           cp "$dmg" Lumen-macos-universal.dmg
+          # In-app update payload and manifest (see README → Updates).
+          updater=
+          macos=src-tauri/target/universal-apple-darwin/release/bundle/macos
+          if [ -f "$macos/Lumen.app.tar.gz.sig" ]; then
+            sh scripts/updater-manifest.sh "${{ github.run_number }}" "$SHA" > latest.json
+            updater="$macos/Lumen.app.tar.gz latest.json"
+          fi
           gh release delete main-latest --cleanup-tag --yes || true
-          gh release create main-latest Lumen-macos-universal.dmg "$dmg" \
+          gh release create main-latest Lumen-macos-universal.dmg "$dmg" $updater \
             --target "$SHA" --prerelease \
             --title "Latest main build" \
             --notes "Automatic build of main at ${SHA}. Universal macOS app (Apple silicon and Intel), ad-hoc signed and not notarized: on first launch, use System Settings → Privacy & Security → Open Anyway."
