@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Check, Trash } from 'phosphor-svelte';
+  import Select from '../Select.svelte';
   import Modal from '../Modal.svelte';
   import { ui } from '../../lib/ui.svelte';
   import type { Note, Prompt } from '../../lib/types';
@@ -34,13 +35,18 @@
 </script>
 
 <Modal title={existing ? 'Edit question' : 'New question'} onclose={() => ui.close()}
-  ><label class="form-field"
-    >Activity<select class="select-input" bind:value={draft.kind}
-      ><option value="recall">Recall · reconstruct the idea</option><option value="explain"
-        >Explain · understand why</option
-      ><option value="apply">Apply · try a new situation</option></select
-    ></label
-  ><label class="form-field"
+  ><div class="form-field">
+    Activity<Select
+      label="Activity"
+      bind:value={draft.kind}
+      options={[
+        { value: 'recall', label: 'Recall · reconstruct the idea' },
+        { value: 'explain', label: 'Explain · understand why' },
+        { value: 'apply', label: 'Apply · try a new situation' },
+      ]}
+    />
+  </div>
+  <label class="form-field"
     >Question<textarea
       rows="3"
       bind:value={draft.question}

@@ -3,13 +3,13 @@
     MagnifyingGlass,
     Plus,
     Brain,
-    CaretDown,
     FileText,
     PushPin,
     X,
     ArrowLineLeft,
     TrayArrowDown,
   } from 'phosphor-svelte';
+  import Select from './Select.svelte';
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { excerpt } from '../lib/markdown';
@@ -62,11 +62,18 @@
           aria-label="Clear filter"
           onclick={() => (ui.query = '')}><X size={12} /></button
         >{/if}</label
-    ><label class="sort-control" title="Sort notes"
-      ><select aria-label="Sort notes" bind:value={ui.sort}
-        ><option value="updated">Last edited</option><option value="title">Title</option></select
-      ><CaretDown size={11} /></label
     >
+    <div class="sort-control" title="Sort notes">
+      <Select
+        label="Sort notes"
+        compact
+        bind:value={ui.sort}
+        options={[
+          { value: 'updated', label: 'Last edited' },
+          { value: 'title', label: 'Title' },
+        ]}
+      />
+    </div>
   </div>
   <div class="note-list-scroll">
     {#if library.loading}<div class="skeleton-note"></div>

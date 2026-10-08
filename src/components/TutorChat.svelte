@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { ArrowUp, X } from 'phosphor-svelte';
+  import Select from './Select.svelte';
   import Markdown from './Markdown.svelte';
   import {
     PROVIDER_NAMES,
@@ -73,14 +74,13 @@
 <aside class="tutor" aria-label="Ask about this card">
   <div class="tutor-head">
     <span class="tutor-title">Ask about this card</span>
-    {#if providers && providers.length > 1}<select
-        class="select-input"
-        aria-label="Chat app"
-        value={provider}
+    {#if providers && providers.length > 1}<Select
+        label="Chat app"
+        value={provider ?? providers[0]}
         disabled={asking}
-        onchange={(e) => choose(e.currentTarget.value as Provider)}
-        >{#each providers as p (p)}<option value={p}>{PROVIDER_NAMES[p]}</option>{/each}</select
-      >{:else if provider}<span class="subtle">{PROVIDER_NAMES[provider]}</span>{/if}
+        onchange={choose}
+        options={providers.map((p) => ({ value: p, label: PROVIDER_NAMES[p] }))}
+      />{:else if provider}<span class="subtle">{PROVIDER_NAMES[provider]}</span>{/if}
     <button class="icon-button" title="Close" aria-label="Close chat" onclick={onclose}
       ><X size={15} /></button
     >
