@@ -1,0 +1,52 @@
+name: Main build
+
+# Build the macOS app from main after CI succeeds, and publish it as the rolling
+# "main-latest" pre-release so the current main branch is always downloadable.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: main-build
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: macos-latest
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - name: Build universal, ad-hoc signed app and DMG
+        run: npm run desktop:release
+      - name: Publish main-latest pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          dmg=$(ls src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
+          cp "$dmg" Lumen-macos-universal.dmg
+          gh release delete main-latest --cleanup-tag --yes || true
+          gh release create main-latest Lumen-macos-universal.dmg "$dmg" \
+            --target "$SHA" --prerelease \
+            --title "Latest main build" \
+            --notes "Automatic build of main at ${SHA}. Universal macOS app (Apple silicon and Intel), ad-hoc signed and not notarized: on first launch, use System Settings → Privacy & Security → Open Anyway."
