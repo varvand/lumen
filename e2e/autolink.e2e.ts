@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
       linkTest: { calls: { prompt: string; effort: string }[]; answer: string };
     };
     win.isTauri = true;
-    win.linkTest = { calls: [], answer: '1 2\n3 -> 1\nnot a link' };
+    win.linkTest = { calls: [], answer: 'P1 yes\nP2 yes\nP3 no\nnot a link' };
     let callback = 0;
     win.__TAURI_INTERNALS__ = {
       metadata: { currentWindow: { label: 'main' }, currentWebview: { label: 'main' } },
@@ -39,7 +39,7 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole('button', { name: 'Graph' }).click();
 });
 
-test('suggests links from short digests of unlinked notes and adds the chosen ones', async ({
+test('asks only about likely pairs, as short digests, and adds the chosen links', async ({
   page,
 }) => {
   const suggest = page.getByRole('button', { name: 'Suggest links' });
@@ -54,7 +54,8 @@ test('suggests links from short digests of unlinked notes and adds the chosen on
         .calls,
   );
   expect(call.effort).toBe('light');
-  expect(call.prompt).toContain('NEW\n1 | ');
+  expect(call.prompt).toContain('NOTES\n');
+  expect(call.prompt).toMatch(/\nPAIRS\nP1: /);
   // Each note is sent as a short digest, never in full.
   expect(call.prompt.length).toBeLessThan(2000);
 
@@ -77,7 +78,7 @@ test('suggests links from short digests of unlinked notes and adds the chosen on
   await expect(panel).toBeHidden();
   await expect(page.getByText('· 1 link', { exact: false })).toBeVisible();
 
-  // Checked notes are not sent again until they change.
+  // Checked pairs are not sent again until either note changes.
   await suggest.click();
-  await expect(page.getByText('Every note is linked or has already been checked.')).toBeVisible();
+  await expect(page.getByText(/^No new likely links/)).toBeVisible();
 });

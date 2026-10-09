@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { BATCH, digest, linkRequest, parseLinks, pendingLinks, withLinks } from './autolink';
+import {
+  BATCH,
+  digest,
+  likelyPairs,
+  linkRequest,
+  parseLinks,
+  pendingLinks,
+  withLinks,
+} from './autolink';
 import { linkGraph } from './links';
 import type { Note } from './types';
 
@@ -28,11 +36,11 @@ describe('Link suggestions', () => {
   it('keeps only the opening prose of a note', () => {
     const body =
       '## Heading\n\nPlants use **light** to make [[Sugar|sugar]].\n\n```js\nnoise()\n```\n\n$$x^2$$\n\n' +
-      'word '.repeat(80);
+      'word '.repeat(100);
     const text = digest(body);
     expect(text.startsWith('Heading Plants use light to make sugar. word')).toBe(true);
     expect(text).not.toMatch(/noise|x\^2|\*\*|\[\[/);
-    expect(text.length).toBeLessThanOrEqual(201);
+    expect(text.length).toBeLessThanOrEqual(301);
     expect(text.endsWith('…')).toBe(true);
   });
 
@@ -40,59 +48,83 @@ describe('Link suggestions', () => {
     expect(digest('| Want | Write |\n| :--- | ---: |\n| bold | **x** |')).toBe('Want Write bold x');
   });
 
-  it('describes only unlinked notes and lists linked ones by title alone', () => {
-    const linked = note('Cell respiration', 'Long private text. See [[Mitochondria]].');
-    const target = note('Mitochondria', 'Also linked, never described.');
-    const lonely = note('Photosynthesis', 'Plants turn light into sugar.', ['biology']);
-    const notes = [linked, target, lonely];
-    const request = linkRequest(notes, linkGraph(notes), {})!;
-    expect(request.described).toBe(1);
-    expect(request.prompt).toContain(
-      '1 | Photosynthesis | #biology | Plants turn light into sugar.',
+  const ml = () =>
+    note(
+      'Mathematical Basics of Machine Learning',
+      'Linear algebra, calculus and optimization. Gradient descent follows the gradient of the ' +
+        'loss; the chain rule gives derivatives of composed functions; a layer computes Wx + b.',
     );
-    expect(request.prompt).toMatch(/\n\d \| Mitochondria\n/);
-    expect(request.prompt).not.toContain('Long private text');
-    expect(request.prompt).not.toContain('never described');
+  const backprop = () =>
+    note(
+      'How Backpropagation Works',
+      'Backpropagation computes the gradient of the loss for every weight with the chain rule, ' +
+        'then gradient descent updates each layer.',
+    );
+  const unrelated = () =>
+    note('Sourdough', 'Feed the starter with flour and water, then bake the loaf in a hot oven.');
+
+  it('pairs notes that share distinctive words, even when neither names the other', () => {
+    const notes = [ml(), backprop(), unrelated(), note('Packing list', 'Passport and charger.')];
+    const pairs = likelyPairs(notes, linkGraph(notes));
+    expect(pairs.map(({ from, to }) => `${from.title} > ${to.title}`)).toEqual([
+      'How Backpropagation Works > Mathematical Basics of Machine Learning',
+    ]);
   });
 
-  it('skips notes already checked until they are edited, and batches large libraries', () => {
-    const notes = Array.from({ length: BATCH + 5 }, (_, i) => note(`Note ${i}`, 'text'));
+  it('skips pairs already linked either way, and notes with ambiguous titles', () => {
+    const linked = [ml(), backprop(), unrelated()];
+    linked[0].body += ' See [[How Backpropagation Works]].';
+    expect(likelyPairs(linked, linkGraph(linked))).toEqual([]);
+    const same = [ml(), backprop(), unrelated(), backprop()];
+    expect(likelyPairs(same, linkGraph(same))).toEqual([]);
+  });
+
+  it('describes only the notes in likely pairs, as short digests', () => {
+    const notes = [ml(), backprop(), unrelated()];
+    const request = linkRequest(notes, linkGraph(notes), {})!;
+    expect(request.pairs).toHaveLength(1);
+    expect(request.prompt).toContain(
+      'NOTES\nHow Backpropagation Works |  | Backpropagation computes',
+    );
+    expect(request.prompt).toContain(
+      'PAIRS\nP1: How Backpropagation Works / Mathematical Basics of Machine Learning',
+    );
+    expect(request.prompt).not.toContain('Sourdough');
+  });
+
+  it('checks a pair again only after either note changes, and batches large libraries', () => {
+    const topics = Array.from({ length: BATCH + 10 }, (_, i) => `topic${i}`);
+    // Each note shares one distinctive word with the next, so every neighbor pair is likely.
+    const notes = topics.map((t, i) =>
+      note(`Note ${i}`, `${t} ${topics[(i + 1) % topics.length]} ${'filler '.repeat(3)}`),
+    );
     const graph = linkGraph(notes);
     const first = linkRequest(notes, graph, {})!;
-    expect(first.described).toBe(BATCH);
-    expect(first.remaining).toBe(5);
-    const checked = Object.fromEntries(
-      first.notes.slice(0, first.described).map((n) => [n.id, n.updatedAt]),
+    expect(first.pairs).toHaveLength(BATCH);
+    expect(first.remaining).toBeGreaterThan(0);
+    const version = ({ from, to }: { from: Note; to: Note }) =>
+      from.id < to.id
+        ? [`${from.id} ${to.id}`, `${from.updatedAt} ${to.updatedAt}`]
+        : [`${to.id} ${from.id}`, `${to.updatedAt} ${from.updatedAt}`];
+    const checked = Object.fromEntries(first.pairs.map(version));
+    expect(linkRequest(notes, graph, checked)!.pairs).toHaveLength(first.remaining);
+    const all = Object.fromEntries(
+      [...first.pairs, ...linkRequest(notes, graph, checked)!.pairs].map(version),
     );
-    expect(linkRequest(notes, graph, checked)!.described).toBe(5);
-    const all = Object.fromEntries(notes.map((n) => [n.id, n.updatedAt]));
     expect(linkRequest(notes, graph, all)).toBeUndefined();
-    notes[0].updatedAt += 1;
-    expect(linkRequest(notes, graph, all)!.notes[0].id).toBe(notes[0].id);
+    first.pairs[0].from.updatedAt += 10_000;
+    expect(linkRequest(notes, graph, all)!.pairs.length).toBeGreaterThan(0);
   });
 
-  it('leaves out titles a link cannot name', () => {
-    const notes = [note('Same'), note('Same'), note('A [draft]'), note('Fine')];
+  it('reads the pairs answered yes and ignores the rest', () => {
+    const notes = [ml(), backprop(), unrelated()];
     const request = linkRequest(notes, linkGraph(notes), {})!;
-    expect(request.notes.map((n) => n.title)).toEqual(['Fine']);
-  });
-
-  it('reads number pairs and drops invalid, repeated and reversed ones', () => {
-    const notes = [note('A'), note('B'), note('C', 'see [[D]]'), note('D')];
-    const request = linkRequest(notes, linkGraph(notes), {})!;
-    const names = request.notes.map((n) => n.title);
-    const at = (title: string) => names.indexOf(title) + 1;
-    const answer = [
-      `${at('A')} ${at('B')}`,
-      `${at('B')} -> ${at('A')}`,
-      `1. ${at('A')} ${at('C')}`,
-      `${at('C')} ${at('A')}`,
-      `${at('A')} ${at('A')}`,
-      `${at('A')} 99`,
-      'none',
-    ].join('\n');
-    const links = parseLinks(answer, request).map(({ from, to }) => `${from.title}>${to.title}`);
-    expect(links).toEqual(['A>B', 'A>C']);
+    const [pair] = request.pairs;
+    expect(parseLinks('P1 yes', request)).toEqual([pair]);
+    expect(parseLinks('- **P1:** Yes, both cover gradients', request)).toEqual([pair]);
+    expect(parseLinks('1 - yes\nP1 yes\nP7 yes', request)).toEqual([pair]);
+    expect(parseLinks('P1 no', request)).toEqual([]);
+    expect(parseLinks('P1 no, not yes', request)).toEqual([]);
   });
 
   it('keeps saved suggestions only while both notes exist and are still unlinked', () => {
