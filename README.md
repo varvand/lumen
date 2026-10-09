@@ -1,6 +1,6 @@
 # Lumen
 
-A Mac-first Markdown editor and learning workbench. Svelte 5, CodeMirror 6, KaTeX, and a Rust/Tauri 2 desktop shell. Plain Markdown files and SQLite keep your library local.
+A Markdown editor and learning workbench powered by AI. Svelte 5, CodeMirror 6, KaTeX, and a Rust/Tauri 2 desktop shell. Plain Markdown files and SQLite keep your library local.
 
 ![Typing Markdown in Lumen: headings, bold text, math, and a link render in place as you write](docs/images/live-editing.gif)
 
