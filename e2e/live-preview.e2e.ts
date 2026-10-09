@@ -29,9 +29,9 @@ test('renders Markdown in place and reveals it on the line being edited', async 
   await expect(lines.nth(2)).toHaveText('Review');
 });
 
-test('shows plain Markdown when live preview is off', async ({ page }) => {
+test('shows plain Markdown when rendering in the editor is off', async ({ page }) => {
   await page.getByRole('button', { name: 'Settings' }).click();
-  await page.getByRole('switch', { name: 'Live preview while writing' }).uncheck();
+  await page.getByRole('switch', { name: 'Render Markdown in the editor' }).uncheck();
   await page.keyboard.press('Escape');
   const editor = page.getByRole('textbox', { name: 'Markdown editor' });
   await editor.click();

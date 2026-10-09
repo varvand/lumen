@@ -117,7 +117,7 @@
       /></label
     >
     <label class="setting-row"
-      >Live preview while writing<input
+      >Render Markdown in the editor<input
         type="checkbox"
         role="switch"
         checked={preferences.livePreview}
