@@ -77,8 +77,9 @@ export const tutor = {
     }
   },
   providers: () => invoke<Provider[]>('assistant_providers'),
-  ask: (provider: Provider, prompt: string) =>
-    invoke<string>('ask_assistant', { provider, prompt }),
+  /** `light` asks for a smaller, cheaper model, for simple matching work. */
+  ask: (provider: Provider, prompt: string, light = false) =>
+    invoke<string>('ask_assistant', { provider, prompt, light }),
   preferred(available: Provider[]): Provider | undefined {
     let saved: string | null = null;
     try {

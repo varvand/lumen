@@ -1863,13 +1863,92 @@ dialog::backdrop {
 .graph-controls .icon-button {
   margin-left: auto;
 }
+.graph-controls .graph-suggest {
+  margin-left: auto;
+}
+.graph-suggest + .icon-button {
+  margin-left: 0;
+}
+.graph-suggest-count {
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
+.graph-suggest:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+/* Links the chat app suggested, waiting for review over the graph. */
+.link-suggestions {
+  position: absolute;
+  z-index: 5;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(340px, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  padding: 14px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  animation: appear 0.12s ease;
+}
+.link-suggestions h2 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.link-suggestions ul {
+  list-style: none;
+  margin: 0 -6px;
+  padding: 0;
+  overflow-y: auto;
+}
+.link-suggestions label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--secondary);
+  cursor: pointer;
+}
+.link-suggestions label:hover {
+  background: var(--hover);
+}
+.link-suggestions label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.link-suggestions input {
+  flex: none;
+  accent-color: var(--accent);
+}
+.link-suggestions .subtle {
+  font-size: var(--text-xs);
+}
+.link-suggestions-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+}
 .graph-canvas {
   position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
-.graph-canvas svg {
+.graph-canvas > svg {
   position: absolute;
   inset: 0;
   display: block;
@@ -1877,7 +1956,7 @@ dialog::backdrop {
   touch-action: none;
   user-select: none;
 }
-.graph-canvas svg.dragging {
+.graph-canvas > svg.dragging {
   cursor: grabbing;
 }
 .graph-link {

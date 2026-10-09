@@ -25,7 +25,8 @@ impl Provider {
     }
 
     /// Arguments for one answer read from stdin. Claude prints it; Codex writes it to `output`.
-    pub fn args(self, output: &Path) -> Vec<String> {
+    /// `light` picks a smaller, cheaper model for simple matching work.
+    pub fn args(self, output: &Path, light: bool) -> Vec<String> {
         let args: &[&str] = match self {
             Provider::Claude => &[
                 "-p",
@@ -44,11 +45,19 @@ impl Provider {
                 "read-only",
                 "--color",
                 "never",
-                "-o",
             ],
         };
         let mut args: Vec<String> = args.iter().map(|a| a.to_string()).collect();
+        if light {
+            match self {
+                Provider::Claude => args.extend(["--model".into(), "haiku".into()]),
+                Provider::Codex => {
+                    args.extend(["-c".into(), "model_reasoning_effort=\"low\"".into()])
+                }
+            }
+        }
         if self == Provider::Codex {
+            args.push("-o".into());
             args.push(output.to_string_lossy().into_owned());
             args.push("-".into());
         }
@@ -130,7 +139,11 @@ pub mod commands {
     }
 
     #[tauri::command(async)]
-    pub fn ask_assistant(provider: Provider, prompt: String) -> Result<String> {
+    pub fn ask_assistant(
+        provider: Provider,
+        prompt: String,
+        light: Option<bool>,
+    ) -> Result<String> {
         let dirs = dirs();
         let binary = find(provider.binary(), &dirs).ok_or_else(|| {
             format!(
@@ -142,7 +155,7 @@ pub mod commands {
         let output = work.path().join("answer.md");
         let path = std::env::join_paths(&dirs).map_err(|e| e.to_string())?;
         let mut child = Command::new(binary)
-            .args(provider.args(&output))
+            .args(provider.args(&output, light.unwrap_or(false)))
             .current_dir(work.path())
             .env("PATH", path)
             .stdin(Stdio::piped())
@@ -203,11 +216,25 @@ mod tests {
     #[test]
     fn claude_runs_without_tools_and_codex_writes_its_answer_to_a_file() {
         let out = Path::new("/tmp/answer.md");
-        let claude = Provider::Claude.args(out);
+        let claude = Provider::Claude.args(out, false);
         assert_eq!(&claude[..3], ["-p", "--tools", ""]);
-        let codex = Provider::Codex.args(out);
+        assert!(!claude.contains(&"--model".to_string()));
+        let codex = Provider::Codex.args(out, false);
         assert_eq!(codex[0], "exec");
         assert!(codex.windows(2).any(|w| w == ["--sandbox", "read-only"]));
+        assert_eq!(&codex[codex.len() - 3..], ["-o", "/tmp/answer.md", "-"]);
+    }
+
+    #[test]
+    fn light_requests_use_a_smaller_model() {
+        let out = Path::new("/tmp/answer.md");
+        let claude = Provider::Claude.args(out, true);
+        assert!(claude.windows(2).any(|w| w == ["--model", "haiku"]));
+        let codex = Provider::Codex.args(out, true);
+        assert!(codex
+            .windows(2)
+            .any(|w| w == ["-c", "model_reasoning_effort=\"low\""]));
+        // The prompt still arrives on stdin after the output file.
         assert_eq!(&codex[codex.len() - 3..], ["-o", "/tmp/answer.md", "-"]);
     }
 
