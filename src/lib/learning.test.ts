@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { schedule, practiceQueue, latestAttempts, latestAttempt } from './learning';
+import {
+  schedule,
+  practiceQueue,
+  latestAttempts,
+  latestAttempt,
+  practiceCollections,
+  inCollections,
+} from './learning';
 import { seedNotes } from './seeds';
 import type { Attempt } from './types';
 
@@ -69,5 +76,33 @@ describe('Practice scheduling', () => {
     expect(latestAttempt(latest, 'p', 'n')?.id).toBe('a');
     expect(latestAttempt(latest, 'other', 'n')?.id).toBe('c');
     expect(latestAttempt(latest, 'p', 'missing')).toBeUndefined();
+  });
+});
+
+describe('Practicing chosen collections', () => {
+  const sample = seedNotes()[1];
+  const notes = [
+    { ...sample, id: 'a', collection: 'Math / Calculus' },
+    { ...sample, id: 'b', collection: 'Math/Algebra' },
+    { ...sample, id: 'c', collection: 'History' },
+    { ...sample, id: 'd', collection: '' },
+  ];
+  const due = practiceQueue(notes, []);
+  const per = due.length / notes.length;
+  it('lists collections with ready questions, parents included', () => {
+    expect(practiceCollections(due)).toEqual([
+      { path: 'History', count: per },
+      { path: 'Math', count: 2 * per },
+      { path: 'Math / Algebra', count: per },
+      { path: 'Math / Calculus', count: per },
+    ]);
+  });
+  it('keeps questions from the chosen collections and their subfolders', () => {
+    const ids = (chosen: string[]) => [
+      ...new Set(inCollections(due, chosen).map((q) => q.note.id)),
+    ];
+    expect(ids([])).toEqual(['a', 'b', 'c', 'd']);
+    expect(ids(['Math'])).toEqual(['a', 'b']);
+    expect(ids(['Math / Algebra', 'History'])).toEqual(['b', 'c']);
   });
 });

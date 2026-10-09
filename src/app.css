@@ -2090,6 +2090,40 @@ svg.hovering .graph-link:not(.near) {
   color: var(--secondary);
   margin: 17px 0 29px;
 }
+.practice-collections {
+  margin: 29px 0 0;
+}
+.collection-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.collection-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--secondary);
+  font-size: var(--text-xs);
+}
+.collection-choice:hover {
+  color: var(--text);
+}
+.collection-choice small {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.collection-choice[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent);
+}
+.collection-choice[aria-pressed='true'] small {
+  color: inherit;
+}
 .session-overview {
   display: flex;
   align-items: center;
