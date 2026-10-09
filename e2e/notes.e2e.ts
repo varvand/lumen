@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 test('opens with the starter notes', async ({ page }) => {
   const list = page.getByRole('region', { name: 'Note library' });
   await expect(list.getByRole('heading', { name: 'All notes' })).toBeVisible();
-  await expect(list.getByText('3 notes')).toBeVisible();
+  await expect(list.locator('.list-count')).toHaveText('3 notes');
   // Where notes are stored is explained in Settings.
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.getByRole('dialog', { name: 'Settings' })).toContainText('browser storage');
@@ -23,7 +23,7 @@ test('creates a note and keeps it after a reload', async ({ page }) => {
   await page.reload();
   const list = page.getByRole('region', { name: 'Note library' });
   await expect(list.getByRole('heading', { name: 'Photosynthesis basics' })).toBeVisible();
-  await expect(list.getByText('4 notes')).toBeVisible();
+  await expect(list.locator('.list-count')).toHaveText('4 notes');
 });
 
 test('pins and trashes a note from the actions menu', async ({ page }) => {
@@ -42,7 +42,7 @@ test('pins and trashes a note from the actions menu', async ({ page }) => {
   await menu.click();
   await page.getByRole('menuitem', { name: 'Move to Trash' }).click();
   await expect(list.getByRole('heading', { name: title })).toHaveCount(0);
-  await expect(list.getByText('2 notes')).toBeVisible();
+  await expect(list.locator('.list-count')).toHaveText('2 notes');
 });
 
 test('edits hashtag tags in the note header and persists them', async ({ page }) => {
@@ -103,7 +103,7 @@ test('names a new collection in place', async ({ page }) => {
   await expect(collections.getByRole('button', { name: 'Chemistry', exact: true })).toBeVisible();
   const list = page.getByRole('region', { name: 'Note library' });
   await expect(list.getByRole('heading', { name: 'Chemistry' })).toBeVisible();
-  await expect(list.getByText('1 note', { exact: true })).toBeVisible();
+  await expect(list.locator('.list-count')).toHaveText('1 note');
 
   // Escape cancels without creating anything.
   await page.getByRole('button', { name: 'New collection' }).click();

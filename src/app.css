@@ -103,8 +103,8 @@ button:disabled:hover {
   --radius-lg: 10px;
   --shadow-sm: 0 1px 2px #0000000d;
   display: grid;
-  --sidebar-col: calc(232px * var(--ui-scale, 1));
-  --list-col: calc(265px * var(--ui-scale, 1));
+  --sidebar-col: calc(194px * var(--ui-scale, 1));
+  --list-col: calc(228px * var(--ui-scale, 1));
   grid-template-columns: var(--sidebar-col) var(--list-col) minmax(0, 1fr);
   height: 100dvh;
   min-height: 500px;
@@ -417,6 +417,19 @@ button:disabled:hover {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  container-type: inline-size;
+}
+/* The sidebar shows the same count, so a narrow list gives its room to the heading and keeps
+   the count for screen readers only. */
+@container (max-width: 250px) {
+  .list-count {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
 }
 .list-title {
   display: flex;
@@ -1101,8 +1114,8 @@ button:disabled:hover {
   margin: auto;
 }
 .details-panel {
-  width: 220px;
-  min-width: 220px;
+  width: 188px;
+  min-width: 188px;
   padding: 17px 19px 30px;
   border-left: 1px solid var(--border);
   overflow-y: auto;
@@ -2199,12 +2212,12 @@ svg.hovering .graph-link:not(.near) {
 }
 @media (min-width: 1600px) {
   .app-shell {
-    --sidebar-col: calc(225px * var(--ui-scale, 1));
-    --list-col: calc(290px * var(--ui-scale, 1));
+    --sidebar-col: calc(192px * var(--ui-scale, 1));
+    --list-col: calc(250px * var(--ui-scale, 1));
   }
   .details-panel {
-    width: 245px;
-    min-width: 245px;
+    width: 208px;
+    min-width: 208px;
     padding-left: 24px;
     padding-right: 24px;
   }
@@ -2217,16 +2230,31 @@ svg.hovering .graph-link:not(.near) {
 }
 @media (max-width: 1250px) {
   .app-shell {
-    --sidebar-col: calc(185px * var(--ui-scale, 1));
-    --list-col: calc(235px * var(--ui-scale, 1));
+    --sidebar-col: calc(170px * var(--ui-scale, 1));
+    --list-col: calc(205px * var(--ui-scale, 1));
   }
   .sidebar {
     padding-left: 13px;
     padding-right: 13px;
   }
+  .sidebar .search-trigger kbd {
+    display: none;
+  }
+  .sidebar .brand {
+    gap: 7px;
+    padding-left: 4px;
+    font-size: var(--text-xl);
+  }
+  .list-title {
+    padding-left: 14px;
+    padding-right: 10px;
+  }
+  .list-title-actions {
+    gap: 0;
+  }
   .details-panel {
-    width: 190px;
-    min-width: 190px;
+    width: 168px;
+    min-width: 168px;
     padding-left: 14px;
     padding-right: 14px;
   }
@@ -2254,8 +2282,8 @@ svg.hovering .graph-link:not(.near) {
     padding-right: 40px;
   }
   .app-shell {
-    --sidebar-col: calc(175px * var(--ui-scale, 1));
-    --list-col: calc(225px * var(--ui-scale, 1));
+    --sidebar-col: calc(165px * var(--ui-scale, 1));
+    --list-col: calc(200px * var(--ui-scale, 1));
   }
   .focus-mode {
     grid-template-columns: 1fr;
