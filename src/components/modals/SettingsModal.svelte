@@ -4,6 +4,7 @@
   import Modal from '../Modal.svelte';
   import ThemeEditor from '../ThemeEditor.svelte';
   import ChatAppsSettings from '../ChatAppsSettings.svelte';
+  import AssistantSettings from '../AssistantSettings.svelte';
   import { library } from '../../lib/library.svelte';
   import { preferences, UI_SCALE } from '../../lib/preferences.svelte';
   import { BUILTIN_THEMES, newThemeId, type ThemeDefinition } from '../../lib/themes';
@@ -141,6 +142,7 @@
       >
     </div>
   </div>
+  {#if native}<AssistantSettings />{/if}
   <ChatAppsSettings />
   {#if updates.enabled}<div class="settings-section">
       <h3>Updates</h3>

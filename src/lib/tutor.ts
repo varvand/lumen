@@ -1,9 +1,13 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Note, Prompt } from './types';
 
-/** Chat apps Lumen can ask through their signed-in command-line tool. */
-export type Provider = 'claude' | 'codex';
-export const PROVIDER_NAMES: Record<Provider, string> = { claude: 'Claude', codex: 'ChatGPT' };
+/** Chat apps Lumen can ask through their signed-in command-line tool, or a local Ollama model. */
+export type Provider = 'claude' | 'codex' | 'ollama';
+export const PROVIDER_NAMES: Record<Provider, string> = {
+  claude: 'Claude',
+  codex: 'ChatGPT',
+  ollama: 'Ollama',
+};
 
 export interface TutorMessage {
   role: 'user' | 'assistant';
@@ -61,6 +65,7 @@ export function tutorPrompt(card: TutorCard, history: TutorMessage[], question: 
 
 const KEY = 'lumen.tutor.provider';
 const OPEN_KEY = 'lumen.tutor.open';
+const MODEL_KEY = 'lumen.tutor.ollamaModel';
 export const tutor = {
   get open() {
     try {
@@ -77,9 +82,31 @@ export const tutor = {
     }
   },
   providers: () => invoke<Provider[]>('assistant_providers'),
-  /** `light` asks for a smaller, cheaper model, for simple matching work. */
-  ask: (provider: Provider, prompt: string, light = false) =>
-    invoke<string>('ask_assistant', { provider, prompt, light }),
+  /** The models Ollama has downloaded; rejects when Ollama isn't running. */
+  ollamaModels: () => invoke<string[]>('ollama_models'),
+  /** `light` asks a chat app for a smaller, cheaper model, for simple matching work. Ollama
+   * always answers with the model chosen in Settings. */
+  async ask(provider: Provider, prompt: string, light = false) {
+    const model = provider === 'ollama' ? this.ollamaModel(await this.ollamaModels()) : undefined;
+    return invoke<string>('ask_assistant', { provider, prompt, light, model });
+  },
+  /** The chosen Ollama model while it is still downloaded, otherwise the first one. */
+  ollamaModel(available: string[]): string | undefined {
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem(MODEL_KEY);
+    } catch {
+      /* Fall back to the first model. */
+    }
+    return available.find((m) => m === saved) ?? available[0];
+  },
+  rememberModel(model: string) {
+    try {
+      localStorage.setItem(MODEL_KEY, model);
+    } catch {
+      /* A per-device convenience only. */
+    }
+  },
   preferred(available: Provider[]): Provider | undefined {
     let saved: string | null = null;
     try {

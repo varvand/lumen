@@ -1294,6 +1294,19 @@ button:disabled:hover {
 .add-question:hover {
   background: var(--accent-soft);
 }
+.add-question + .add-question {
+  margin-top: 6px;
+}
+.writing-questions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.prompt-list ~ .danger {
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
 .metadata-fields label {
   font-size: var(--text-xs);
   color: var(--muted);

@@ -111,9 +111,12 @@
       )
         open = false;
     };
+    // Close once a scroll moves the trigger away from the menu; a late scroll event from
+    // bringing it into view just before opening leaves it in place.
     const scroll = (event: Event) => {
       if (event.target instanceof Node && element.contains(event.target)) return;
-      open = false;
+      const moved = trigger.getBoundingClientRect();
+      if (moved.top !== rect.top || moved.left !== rect.left) open = false;
     };
     const resize = () => (open = false);
     document.addEventListener('pointerdown', outside, true);
@@ -134,8 +137,14 @@
   $effect(() => {
     if (disabled) open = false;
   });
+  // Scroll only the menu: scrollIntoView would also scroll the dialog behind it, which closes
+  // the menu.
   $effect(() => {
-    if (open) menu?.children[active]?.scrollIntoView({ block: 'nearest' });
+    const item = open ? (menu?.children[active] as HTMLElement | undefined) : undefined;
+    if (!menu || !item) return;
+    if (item.offsetTop < menu.scrollTop) menu.scrollTop = item.offsetTop;
+    else if (item.offsetTop + item.offsetHeight > menu.scrollTop + menu.clientHeight)
+      menu.scrollTop = item.offsetTop + item.offsetHeight - menu.clientHeight;
   });
 </script>
 

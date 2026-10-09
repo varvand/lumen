@@ -3,6 +3,7 @@
 //! Lumen runs the Claude Code (`claude`) or Codex (`codex`) CLI the user already signed in to,
 //! so answers come from their own subscription and Lumen never holds an API key. Each call is
 //! one stateless, tool-free turn in an empty folder: the full conversation is in the prompt.
+//! A model served by a local Ollama is the third option; see [`crate::ollama`].
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -12,15 +13,18 @@ use std::path::{Path, PathBuf};
 pub enum Provider {
     Claude,
     Codex,
+    Ollama,
 }
 
 impl Provider {
-    pub const ALL: [Provider; 2] = [Provider::Claude, Provider::Codex];
+    /// The chat apps reached through a command-line tool.
+    pub const CLI: [Provider; 2] = [Provider::Claude, Provider::Codex];
 
     pub fn binary(self) -> &'static str {
         match self {
             Provider::Claude => "claude",
             Provider::Codex => "codex",
+            Provider::Ollama => "ollama",
         }
     }
 
@@ -37,6 +41,7 @@ impl Provider {
                 "--output-format",
                 "text",
             ],
+            Provider::Ollama => &[],
             Provider::Codex => &[
                 "exec",
                 "--skip-git-repo-check",
@@ -54,6 +59,7 @@ impl Provider {
                 Provider::Codex => {
                     args.extend(["-c".into(), "model_reasoning_effort=\"low\"".into()])
                 }
+                Provider::Ollama => {}
             }
         }
         if self == Provider::Codex {
@@ -128,22 +134,44 @@ pub mod commands {
         )
     }
 
-    /// The chat apps whose CLI is installed, in display order.
-    #[tauri::command(async)]
-    pub fn assistant_providers() -> Vec<Provider> {
+    /// The chat apps whose CLI is installed, then Ollama when it runs with a model downloaded,
+    /// in display order.
+    #[tauri::command]
+    pub async fn assistant_providers() -> Vec<Provider> {
         let dirs = dirs();
-        Provider::ALL
+        let mut found: Vec<Provider> = Provider::CLI
             .into_iter()
             .filter(|p| find(p.binary(), &dirs).is_some())
-            .collect()
+            .collect();
+        if crate::ollama::commands::models()
+            .await
+            .is_ok_and(|models| !models.is_empty())
+        {
+            found.push(Provider::Ollama);
+        }
+        found
     }
 
-    #[tauri::command(async)]
-    pub fn ask_assistant(
+    /// `light` asks a chat app for a smaller, cheaper model for simple matching work. `model`
+    /// picks the Ollama model, which always answers with the model chosen in Settings.
+    #[tauri::command]
+    pub async fn ask_assistant(
         provider: Provider,
         prompt: String,
         light: Option<bool>,
+        model: Option<String>,
     ) -> Result<String> {
+        if provider == Provider::Ollama {
+            let model = model.ok_or("Choose an Ollama model in Settings.")?;
+            return crate::ollama::commands::chat(&model, &prompt).await;
+        }
+        let light = light.unwrap_or(false);
+        tauri::async_runtime::spawn_blocking(move || ask_cli(provider, prompt, light))
+            .await
+            .map_err(|e| e.to_string())?
+    }
+
+    fn ask_cli(provider: Provider, prompt: String, light: bool) -> Result<String> {
         let dirs = dirs();
         let binary = find(provider.binary(), &dirs).ok_or_else(|| {
             format!(
@@ -155,7 +183,7 @@ pub mod commands {
         let output = work.path().join("answer.md");
         let path = std::env::join_paths(&dirs).map_err(|e| e.to_string())?;
         let mut child = Command::new(binary)
-            .args(provider.args(&output, light.unwrap_or(false)))
+            .args(provider.args(&output, light))
             .current_dir(work.path())
             .env("PATH", path)
             .stdin(Stdio::piped())
@@ -195,7 +223,7 @@ pub mod commands {
             return Err(failure_reason(&stderr, &stdout));
         }
         let answer = match provider {
-            Provider::Claude => stdout,
+            Provider::Claude | Provider::Ollama => stdout,
             Provider::Codex => std::fs::read_to_string(&output).unwrap_or_default(),
         };
         let answer = answer.trim();
