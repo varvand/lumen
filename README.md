@@ -2,6 +2,14 @@
 
 A Mac-first Markdown editor and learning workbench. Svelte 5, CodeMirror 6, KaTeX, and a Rust/Tauri 2 desktop shell. Plain Markdown files and SQLite keep your library local.
 
+![Typing Markdown in Lumen: headings, bold text, math, and a link render in place as you write](docs/images/live-editing.gif)
+
+| Live Markdown and math                                                 | Split view, dark theme                                                           |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| ![The editor rendering a note in place](docs/images/editor.png)        | ![Source and preview side by side in the dark theme](docs/images/split-dark.png) |
+| **Graph of linked notes**                                              | **Practice**                                                                     |
+| ![Notes and their links, colored by collection](docs/images/graph.png) | ![A recall question in a practice session](docs/images/practice.png)             |
+
 ## Download
 
 The latest build of `main`, rebuilt automatically after CI passes:
