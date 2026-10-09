@@ -16,6 +16,17 @@ pub enum Provider {
     Ollama,
 }
 
+/// How much work a request deserves. Light matching work gets a smaller chat app model, and
+/// only deep work lets an Ollama model reason before it answers, which can take minutes.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Effort {
+    Light,
+    #[default]
+    Standard,
+    Deep,
+}
+
 impl Provider {
     /// The chat apps reached through a command-line tool.
     pub const CLI: [Provider; 2] = [Provider::Claude, Provider::Codex];
@@ -29,8 +40,8 @@ impl Provider {
     }
 
     /// Arguments for one answer read from stdin. Claude prints it; Codex writes it to `output`.
-    /// `light` picks a smaller, cheaper model for simple matching work.
-    pub fn args(self, output: &Path, light: bool) -> Vec<String> {
+    /// Light effort picks a smaller, cheaper model.
+    pub fn args(self, output: &Path, effort: Effort) -> Vec<String> {
         let args: &[&str] = match self {
             Provider::Claude => &[
                 "-p",
@@ -53,7 +64,7 @@ impl Provider {
             ],
         };
         let mut args: Vec<String> = args.iter().map(|a| a.to_string()).collect();
-        if light {
+        if effort == Effort::Light {
             match self {
                 Provider::Claude => args.extend(["--model".into(), "haiku".into()]),
                 Provider::Codex => {
@@ -118,7 +129,7 @@ pub fn failure_reason(stderr: &str, stdout: &str) -> String {
 
 #[cfg(feature = "desktop")]
 pub mod commands {
-    use super::{failure_reason, find, search_path, Provider};
+    use super::{failure_reason, find, search_path, Effort, Provider};
     use crate::store::Result;
     use std::io::{Read, Write};
     use std::path::PathBuf;
@@ -152,26 +163,26 @@ pub mod commands {
         found
     }
 
-    /// `light` asks a chat app for a smaller, cheaper model for simple matching work. `model`
-    /// picks the Ollama model, which always answers with the model chosen in Settings.
+    /// `model` picks the Ollama model chosen in Settings.
     #[tauri::command]
     pub async fn ask_assistant(
         provider: Provider,
         prompt: String,
-        light: Option<bool>,
+        effort: Option<Effort>,
         model: Option<String>,
     ) -> Result<String> {
         if provider == Provider::Ollama {
             let model = model.ok_or("Choose an Ollama model in Settings.")?;
-            return crate::ollama::commands::chat(&model, &prompt).await;
+            let think = effort == Some(Effort::Deep);
+            return crate::ollama::commands::chat(&model, &prompt, think).await;
         }
-        let light = light.unwrap_or(false);
-        tauri::async_runtime::spawn_blocking(move || ask_cli(provider, prompt, light))
+        let effort = effort.unwrap_or_default();
+        tauri::async_runtime::spawn_blocking(move || ask_cli(provider, prompt, effort))
             .await
             .map_err(|e| e.to_string())?
     }
 
-    fn ask_cli(provider: Provider, prompt: String, light: bool) -> Result<String> {
+    fn ask_cli(provider: Provider, prompt: String, effort: Effort) -> Result<String> {
         let dirs = dirs();
         let binary = find(provider.binary(), &dirs).ok_or_else(|| {
             format!(
@@ -183,7 +194,7 @@ pub mod commands {
         let output = work.path().join("answer.md");
         let path = std::env::join_paths(&dirs).map_err(|e| e.to_string())?;
         let mut child = Command::new(binary)
-            .args(provider.args(&output, light))
+            .args(provider.args(&output, effort))
             .current_dir(work.path())
             .env("PATH", path)
             .stdin(Stdio::piped())
@@ -244,10 +255,10 @@ mod tests {
     #[test]
     fn claude_runs_without_tools_and_codex_writes_its_answer_to_a_file() {
         let out = Path::new("/tmp/answer.md");
-        let claude = Provider::Claude.args(out, false);
+        let claude = Provider::Claude.args(out, Effort::Standard);
         assert_eq!(&claude[..3], ["-p", "--tools", ""]);
         assert!(!claude.contains(&"--model".to_string()));
-        let codex = Provider::Codex.args(out, false);
+        let codex = Provider::Codex.args(out, Effort::Deep);
         assert_eq!(codex[0], "exec");
         assert!(codex.windows(2).any(|w| w == ["--sandbox", "read-only"]));
         assert_eq!(&codex[codex.len() - 3..], ["-o", "/tmp/answer.md", "-"]);
@@ -256,9 +267,9 @@ mod tests {
     #[test]
     fn light_requests_use_a_smaller_model() {
         let out = Path::new("/tmp/answer.md");
-        let claude = Provider::Claude.args(out, true);
+        let claude = Provider::Claude.args(out, Effort::Light);
         assert!(claude.windows(2).any(|w| w == ["--model", "haiku"]));
-        let codex = Provider::Codex.args(out, true);
+        let codex = Provider::Codex.args(out, Effort::Light);
         assert!(codex
             .windows(2)
             .any(|w| w == ["-c", "model_reasoning_effort=\"low\""]));

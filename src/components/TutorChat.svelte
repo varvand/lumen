@@ -61,7 +61,12 @@
     followLatest = true;
     await scrollToLatest();
     try {
-      const answer = await tutor.ask(answeringProvider, prompt);
+      // Checking an attempt against the answer is worth reasoning; hints should come quickly.
+      const answer = await tutor.ask(
+        answeringProvider,
+        prompt,
+        card.revealed ? 'deep' : 'standard',
+      );
       if (alive) messages.push({ role: 'assistant', text: answer, provider: answeringProvider });
     } catch (e) {
       if (!alive) return;

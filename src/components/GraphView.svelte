@@ -90,7 +90,7 @@
     }
     finding = true;
     try {
-      const answer = await tutor.ask(provider, request.prompt, true);
+      const answer = await tutor.ask(provider, request.prompt, 'light');
       // Checked notes are not sent again until they are edited.
       checkedNotes.save(request.notes.slice(0, request.described));
       remaining = request.remaining;

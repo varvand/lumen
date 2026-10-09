@@ -82,7 +82,7 @@ test('writes practice questions with the chosen Ollama model when a note becomes
   ).toBeVisible();
   const calls = await page.evaluate(() => (window as any).llm.calls);
   expect(calls).toHaveLength(1);
-  expect(calls[0]).toMatchObject({ provider: 'ollama', model: 'qwen3:8b' });
+  expect(calls[0]).toMatchObject({ provider: 'ollama', model: 'qwen3:8b', effort: 'standard' });
   expect(calls[0].prompt).toContain('<note title="Photosynthesis">');
 
   // Notes that already have questions keep them; switching back and forth asks again only on request.
@@ -90,6 +90,10 @@ test('writes practice questions with the chosen Ollama model when a note becomes
   await chooseGoal(page, 'Learn to apply');
   await expect(page.getByRole('button', { name: 'Write more questions' })).toBeVisible();
   expect(await page.evaluate(() => (window as any).llm.calls.length)).toBe(1);
+
+  // Problems to apply an idea are worth the model's reasoning.
+  await page.getByRole('button', { name: 'Write more questions' }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).llm.calls[1]?.effort)).toBe('deep');
 });
 
 test('explains a failed run and tries again', async ({ page }) => {

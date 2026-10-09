@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
     const win = window as unknown as {
       isTauri: boolean;
       __TAURI_INTERNALS__: unknown;
-      linkTest: { calls: { prompt: string; light: boolean }[]; answer: string };
+      linkTest: { calls: { prompt: string; effort: string }[]; answer: string };
     };
     win.isTauri = true;
     win.linkTest = { calls: [], answer: '1 2\n3 -> 1\nnot a link' };
@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
       unregisterCallback: () => {},
       invoke: async (
         command: string,
-        args: { seeds: unknown[]; prompt: string; light: boolean },
+        args: { seeds: unknown[]; prompt: string; effort: string },
       ) => {
         if (command === 'load_library')
           return { notes: args.seeds, attempts: [], path: '/test/library' };
@@ -50,10 +50,10 @@ test('suggests links from short digests of unlinked notes and adds the chosen on
   await expect(panel.getByRole('heading')).toHaveText('2 suggested links');
   const [call] = await page.evaluate(
     () =>
-      (window as never as { linkTest: { calls: { prompt: string; light: boolean }[] } }).linkTest
+      (window as never as { linkTest: { calls: { prompt: string; effort: string }[] } }).linkTest
         .calls,
   );
-  expect(call.light).toBe(true);
+  expect(call.effort).toBe('light');
   expect(call.prompt).toContain('NEW\n1 | ');
   // Each note is sent as a short digest, never in full.
   expect(call.prompt.length).toBeLessThan(2000);

@@ -9,6 +9,10 @@ export const PROVIDER_NAMES: Record<Provider, string> = {
   ollama: 'Ollama',
 };
 
+/** How much work a request deserves: light matching work gets a smaller chat app model, and
+ * only deep work lets an Ollama model reason before answering, which can take minutes. */
+export type Effort = 'light' | 'standard' | 'deep';
+
 export interface TutorMessage {
   role: 'user' | 'assistant';
   text: string;
@@ -84,11 +88,10 @@ export const tutor = {
   providers: () => invoke<Provider[]>('assistant_providers'),
   /** The models Ollama has downloaded; rejects when Ollama isn't running. */
   ollamaModels: () => invoke<string[]>('ollama_models'),
-  /** `light` asks a chat app for a smaller, cheaper model, for simple matching work. Ollama
-   * always answers with the model chosen in Settings. */
-  async ask(provider: Provider, prompt: string, light = false) {
+  /** Ollama answers with the model chosen in Settings. */
+  async ask(provider: Provider, prompt: string, effort: Effort = 'standard') {
     const model = provider === 'ollama' ? this.ollamaModel(await this.ollamaModels()) : undefined;
-    return invoke<string>('ask_assistant', { provider, prompt, light, model });
+    return invoke<string>('ask_assistant', { provider, prompt, effort, model });
   },
   /** The chosen Ollama model while it is still downloaded, otherwise the first one. */
   ollamaModel(available: string[]): string | undefined {

@@ -27,7 +27,9 @@ class QuestionWriter {
     this.status[noteId] = { writing: true, provider };
     try {
       const intent = note.intent === 'reference' ? 'remember' : note.intent;
-      const reply = await tutor.ask(provider, questionPrompt(note, intent));
+      // Inventing problems with correct answers is worth reasoning; recall questions are not.
+      const effort = intent === 'apply' ? 'deep' : 'standard';
+      const reply = await tutor.ask(provider, questionPrompt(note, intent), effort);
       const prompts = parseQuestions(reply, intent);
       const current = library.get(noteId);
       if (!current) return;

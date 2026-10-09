@@ -44,13 +44,19 @@ pub fn model_names(tags: &Value) -> Vec<String> {
     names
 }
 
-pub fn chat_request(model: &str, prompt: &str) -> Value {
-    json!({
+/// Without `think`, a thinking model answers straight away instead of reasoning first; other
+/// models ignore it. With it, the model keeps its own default.
+pub fn chat_request(model: &str, prompt: &str, think: bool) -> Value {
+    let mut body = json!({
         "model": model,
         "messages": [{ "role": "user", "content": prompt }],
         "stream": false,
         "options": { "num_ctx": CONTEXT_TOKENS },
-    })
+    });
+    if !think {
+        body["think"] = json!(false);
+    }
+    body
 }
 
 /// The answer from an `/api/chat` reply, without any reasoning a thinking model left inline.
@@ -101,12 +107,12 @@ pub mod commands {
         Ok(model_names(&reply))
     }
 
-    pub async fn chat(model: &str, prompt: &str) -> Result<String> {
+    pub async fn chat(model: &str, prompt: &str, think: bool) -> Result<String> {
         let client = reqwest::Client::new();
         let reply: Value = client
             .post(url("/api/chat"))
             .timeout(Duration::from_secs(600))
-            .json(&chat_request(model, prompt))
+            .json(&chat_request(model, prompt, think))
             .send()
             .await
             .map_err(|e| {
@@ -151,10 +157,13 @@ mod tests {
 
     #[test]
     fn chat_request_is_one_stateless_turn() {
-        let body = chat_request("gemma3", "Hi");
+        let body = chat_request("gemma3", "Hi", false);
         assert_eq!(body["stream"], false);
         assert_eq!(body["messages"][0]["content"], "Hi");
         assert_eq!(body["options"]["num_ctx"], CONTEXT_TOKENS);
+        assert_eq!(body["think"], false);
+        // Deep work leaves reasoning to the model's default.
+        assert!(chat_request("gemma3", "Hi", true).get("think").is_none());
     }
 
     #[test]
