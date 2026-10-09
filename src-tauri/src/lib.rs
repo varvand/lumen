@@ -1,6 +1,7 @@
 pub mod assistant;
 pub mod chatgpt;
 pub mod connect;
+pub mod ollama;
 pub mod protocol;
 pub mod store;
 pub mod updates;
@@ -11,6 +12,7 @@ mod desktop {
     use super::assistant::commands as assistant;
     use super::chatgpt::commands as chatgpt;
     use super::connect::commands as connect;
+    use super::ollama::commands as ollama;
     use super::store::{self, Attempt, Library, Note, Result, Store};
     use super::updates::commands as updates;
     use std::path::PathBuf;
@@ -79,6 +81,7 @@ mod desktop {
                 updates::install_update,
                 assistant::assistant_providers,
                 assistant::ask_assistant,
+                ollama::ollama_models,
                 connect::claude_status,
                 connect::connect_claude,
                 connect::disconnect_claude,

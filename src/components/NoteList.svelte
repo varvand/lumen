@@ -10,10 +10,28 @@
     TrayArrowDown,
   } from 'phosphor-svelte';
   import Select from './Select.svelte';
+  import NoteMenu from './NoteMenu.svelte';
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { excerpt } from '../lib/markdown';
   import { dateLabel, tagHue } from '../lib/format';
+  import type { Note } from '../lib/types';
+
+  let menu = $state<{ note: Note; x: number; y: number; trigger: HTMLElement }>();
+
+  function openMenu(event: MouseEvent | KeyboardEvent, note: Note) {
+    event.preventDefault();
+    const trigger = event.currentTarget as HTMLElement;
+    // A menu opened from the keyboard has no pointer position, so anchor it to the row.
+    const row = trigger.getBoundingClientRect();
+    const pointer = 'clientX' in event && (event.clientX || event.clientY);
+    menu = {
+      note,
+      x: pointer ? event.clientX : row.left + 16,
+      y: pointer ? event.clientY : row.top + 28,
+      trigger,
+    };
+  }
 
   const empty = $derived(
     ui.query
@@ -94,7 +112,12 @@
         <button
           class="note-item"
           class:selected={note.id === ui.activeId}
+          class:menu-target={menu?.note.id === note.id}
           onclick={() => ui.select(note.id)}
+          oncontextmenu={(e) => openMenu(e, note)}
+          onkeydown={(e) => {
+            if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) openMenu(e, note);
+          }}
         >
           <div class="note-item-top">
             {#if !ui.collection}<span class="note-collection">{note.collection || 'Unsorted'}</span
@@ -115,3 +138,4 @@
       {/each}{/if}
   </div>
 </section>
+{#if menu}<NoteMenu {...menu} onclose={() => (menu = undefined)} />{/if}

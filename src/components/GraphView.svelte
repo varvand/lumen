@@ -1,11 +1,21 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
-  import { ArrowLeft, ArrowsIn, Graph } from 'phosphor-svelte';
+  import { ArrowLeft, ArrowRight, ArrowsIn, Graph, Sparkle } from 'phosphor-svelte';
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { GraphLayout } from '../lib/graphLayout';
   import { tagHue } from '../lib/format';
   import type { Note } from '../lib/types';
+  import { tutor, PROVIDER_NAMES, type Provider } from '../lib/tutor';
+  import {
+    checkedNotes,
+    linkRequest,
+    parseLinks,
+    pendingLinks,
+    savedSuggestions,
+    withLinks,
+    type LinkSuggestion,
+  } from '../lib/autolink';
 
   const layout = new GraphLayout();
   const showUnlinked = $derived(ui.isExpanded('graph:unlinked', true));
@@ -41,8 +51,87 @@
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
+  // Suggesting links needs a connected chat app, which only the desktop app has.
+  let providers = $state<Provider[]>([]);
+  const provider = $derived(tutor.preferred(providers));
+  tutor
+    .providers()
+    .then((found) => (providers = found))
+    .catch(() => {});
+  let finding = $state(false);
+  let suggestions = $state<(LinkSuggestion & { keep: boolean })[] | null>(null);
+  let remaining = $state(0);
+  /** The pair of notes a suggestion row is pointing at. */
+  let previewPair = $state<string[]>([]);
+  /** Suggestions not yet added or turned down, still valid for the current notes. */
+  let savedPairs = $state(savedSuggestions.load());
+  const saved = $derived(pendingLinks(savedPairs, (id) => library.get(id), library.links));
+
+  function show(links: LinkSuggestion[]) {
+    suggestions = links.map((link) => ({ ...link, keep: true }));
+  }
+  function store(links: LinkSuggestion[]) {
+    savedSuggestions.save(links);
+    savedPairs = savedSuggestions.load();
+  }
+  function hide() {
+    suggestions = null;
+    previewPair = [];
+  }
+
+  /** Show saved suggestions, asking the chat app only about notes not checked yet. */
+  async function suggestLinks() {
+    if (!provider || finding) return;
+    const request = linkRequest(library.live, library.links, checkedNotes.load());
+    if (!request) {
+      if (saved.length) show(saved);
+      else ui.notify('Every note is linked or has already been checked.');
+      return;
+    }
+    finding = true;
+    try {
+      const answer = await tutor.ask(provider, request.prompt, 'light');
+      // Checked notes are not sent again until they are edited.
+      checkedNotes.save(request.notes.slice(0, request.described));
+      remaining = request.remaining;
+      const found = parseLinks(answer, request).map(
+        ({ from, to }) => [from.id, to.id] as [string, string],
+      );
+      const all = pendingLinks([...savedPairs, ...found], (id) => library.get(id), library.links);
+      store(all);
+      if (all.length) show(all);
+      else
+        ui.notify(
+          `No clear links among ${request.described} unlinked ${request.described === 1 ? 'note' : 'notes'}.`,
+        );
+    } catch (e) {
+      ui.notify(String(e).replace(/^Error: /, ''));
+    } finally {
+      finding = false;
+    }
+  }
+
+  function addLinks() {
+    const kept = suggestions?.filter((link) => link.keep) ?? [];
+    const bySource = new Map<string, string[]>();
+    for (const { from, to } of kept)
+      bySource.set(from.id, [...(bySource.get(from.id) || []), to.title]);
+    for (const [id, titles] of bySource) {
+      const note = library.get(id);
+      if (note) library.change(id, { body: withLinks(note.body, titles) });
+    }
+    // Unticked suggestions were turned down, so none are kept.
+    store([]);
+    hide();
+    ui.notify(`Added ${kept.length} ${kept.length === 1 ? 'link' : 'links'}`);
+  }
+
   const neighbors = $derived.by(() => {
     const near = new Set<number>();
+    if (previewPair.length) {
+      graph.notes.forEach((note, i) => previewPair.includes(note.id) && near.add(i));
+      return near;
+    }
     if (hovered < 0) return near;
     near.add(hovered);
     for (const [a, b] of links) {
@@ -199,7 +288,18 @@
           checked={colorCollections}
           onchange={(e) => ui.setExpanded('graph:collections', e.currentTarget.checked)}
         />Color by collection</label
-      ><button
+      >{#if provider}<button
+          class="text-button accent graph-suggest"
+          disabled={finding || !!suggestions}
+          title={`Ask ${PROVIDER_NAMES[provider]} to link related notes. Only notes without links are read, briefly.`}
+          onclick={suggestLinks}
+          ><Sparkle size={14} />{finding
+            ? `Asking ${PROVIDER_NAMES[provider]}…`
+            : 'Suggest links'}{#if saved.length && !finding}<span
+              class="graph-suggest-count"
+              title={`${saved.length} waiting for review`}>{saved.length}</span
+            >{/if}</button
+        >{/if}<button
         class="icon-button small"
         aria-label="Fit graph to view"
         title="Fit to view"
@@ -212,7 +312,7 @@
           bind:this={svg}
           role="group"
           aria-label="Note graph"
-          class:hovering={hovered >= 0}
+          class:hovering={hovered >= 0 || previewPair.length > 0}
           class:dragging={drag !== null}
           {width}
           {height}
@@ -266,7 +366,41 @@
             {/each}
           </g>
         </svg>
-        {#if !graph.edges.length}<p class="graph-hint">
+        {#if suggestions}
+          <section class="link-suggestions" aria-label="Suggested links">
+            <h2>
+              {suggestions.length} suggested {suggestions.length === 1 ? 'link' : 'links'}
+            </h2>
+            <ul>
+              {#each suggestions as link (link.from.id + link.to.id)}
+                <li
+                  onpointerenter={() => (previewPair = [link.from.id, link.to.id])}
+                  onpointerleave={() => (previewPair = [])}
+                >
+                  <label title={`${link.from.title} → ${link.to.title}`}
+                    ><input type="checkbox" bind:checked={link.keep} /><span>{link.from.title}</span
+                    ><ArrowRight size={11} /><span>{link.to.title}</span></label
+                  >
+                </li>
+              {/each}
+            </ul>
+            <p class="subtle">
+              Each link is added to the end of the first note. Unticked links are discarded.{remaining
+                ? ` ${remaining} more unlinked ${remaining === 1 ? 'note' : 'notes'} next time.`
+                : ''}
+            </p>
+            <div class="link-suggestions-actions">
+              <button class="text-button" title="Keep these suggestions for later" onclick={hide}
+                >Not now</button
+              ><button
+                class="primary-button"
+                disabled={!suggestions.some((link) => link.keep)}
+                onclick={addLinks}>Add links</button
+              >
+            </div>
+          </section>
+        {/if}
+        {#if !graph.edges.length && !suggestions}<p class="graph-hint">
             Type [[ in a note to link it to another. Linked notes pull together here.
           </p>{/if}
       {:else}

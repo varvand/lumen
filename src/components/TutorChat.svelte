@@ -61,7 +61,12 @@
     followLatest = true;
     await scrollToLatest();
     try {
-      const answer = await tutor.ask(answeringProvider, prompt);
+      // Checking an attempt against the answer is worth reasoning; hints should come quickly.
+      const answer = await tutor.ask(
+        answeringProvider,
+        prompt,
+        card.revealed ? 'deep' : 'standard',
+      );
       if (alive) messages.push({ role: 'assistant', text: answer, provider: answeringProvider });
     } catch (e) {
       if (!alive) return;
@@ -136,8 +141,8 @@
         <span class="tutor-empty-icon"><ChatCircleText size={24} /></span>
         <h3>Bring your chat app along</h3>
         <p>
-          Install Claude Code or Codex and sign in once in a terminal. Answers use your own
-          subscription.
+          Install Claude Code or Codex and sign in once in a terminal to use your own subscription,
+          or run a local model with Ollama.
         </p>
         <button class="secondary-button" onclick={() => ui.open('settings')}
           >Open settings <ArrowUpRight size={14} /></button

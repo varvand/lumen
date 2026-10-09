@@ -1,13 +1,17 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { Brain, CaretRight, LinkSimple, Plus, X } from 'phosphor-svelte';
+  import { Brain, CaretRight, LinkSimple, Plus, Sparkle, X } from 'phosphor-svelte';
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { headings } from '../lib/markdown';
+  import { native } from '../lib/storage';
+  import { questionWriter } from '../lib/questionWriter.svelte';
+  import { PROVIDER_NAMES } from '../lib/tutor';
   import Select from './Select.svelte';
   import type { Note } from '../lib/types';
 
   let { note }: { note: Note } = $props();
+  const writing = $derived(questionWriter.status[note.id]);
   const outline = $derived(headings(note.body));
   const linkedFrom = $derived(
     (library.links.backlinks.get(note.id) || [])
@@ -15,6 +19,13 @@
       .filter((source) => source !== undefined)
       .sort((a, b) => a.title.localeCompare(b.title)),
   );
+
+  /** Starting to learn a note without questions asks the chat app or Ollama for some. */
+  function setGoal(intent: Note['intent']) {
+    const starting = note.intent === 'reference' && intent !== 'reference';
+    ui.change({ intent });
+    if (starting && native && !note.prompts.length) void questionWriter.write(note.id);
+  }
 
   async function jumpTo(title: string) {
     ui.mode = 'read';
@@ -64,7 +75,7 @@
     <Select
       label="Learning goal"
       value={note.intent}
-      onchange={(intent) => ui.change({ intent })}
+      onchange={setGoal}
       options={[
         { value: 'reference', label: 'Keep as a reference' },
         { value: 'remember', label: 'Remember & explain' },
@@ -76,9 +87,25 @@
             ><span>{prompt.kind}</span>{prompt.question}<CaretRight size={12} /></button
           >{/each}
       </div>
+      {#if writing?.writing}<p class="helper writing-questions" role="status">
+          <span class="tutor-thinking-indicator" aria-hidden="true"></span>{PROVIDER_NAMES[
+            writing.provider
+          ]} is writing questions…
+        </p>{:else if writing}<p role="alert" class="helper danger">
+          Couldn’t write questions: {writing.error}
+        </p>{/if}
       <button class="add-question" onclick={() => ui.editQuestion()}
         ><Plus size={14} /> Add a question</button
-      >
+      >{#if native && !writing?.writing}<button
+          class="add-question"
+          onclick={() => questionWriter.write(note.id)}
+          ><Sparkle size={14} />
+          {writing
+            ? 'Try again'
+            : note.prompts.length
+              ? 'Write more questions'
+              : 'Write questions for me'}</button
+        >{/if}
       <p class="helper mini">Answers stay hidden during practice.</p>{/if}
   </div>
   <div class="panel-section metadata-fields">

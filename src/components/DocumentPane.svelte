@@ -129,7 +129,7 @@
                 role="menuitem"
                 onclick={() => run(() => ui.change({ pinned: !active.pinned }))}
                 ><PushPin size={15} />{active.pinned ? 'Unpin note' : 'Pin note'}</button
-              ><button role="menuitem" onclick={() => run(() => ui.exportActive())}
+              ><button role="menuitem" onclick={() => run(() => ui.exportNote())}
                 ><DownloadSimple size={15} />Export Markdown</button
               ><button role="menuitem" onclick={() => run(() => (ui.focus = !ui.focus))}
                 >{#if ui.focus}<ArrowsInSimple size={15} />Exit focus mode{:else}<ArrowsOutSimple

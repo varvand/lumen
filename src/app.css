@@ -757,6 +757,50 @@ button:disabled:hover {
   border-top: 1px solid var(--border);
   margin: 5px 4px;
 }
+/* Right-click menus open at the pointer, outside the scrolling note list. */
+.context-menu {
+  position: fixed;
+  top: auto;
+  right: auto;
+  z-index: 60;
+  outline: none;
+}
+.context-menu button:focus-visible,
+.context-menu button[aria-expanded='true'] {
+  background: var(--hover);
+  outline: none;
+}
+.context-menu .menu-caret {
+  margin-left: auto;
+  color: var(--muted);
+}
+.collection-menu {
+  min-width: 180px;
+  max-width: 280px;
+  overflow-y: auto;
+}
+.collection-menu button {
+  padding-left: calc(9px + var(--depth, 0) * 14px);
+}
+.collection-menu button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.collection-menu button[aria-checked='true'] {
+  color: var(--accent);
+}
+.collection-menu button svg {
+  margin-left: auto;
+  flex: none;
+}
+.menu-empty {
+  padding: 7px 9px;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.note-item.menu-target {
+  border-color: var(--accent);
+}
 .document-body {
   display: flex;
   flex: 1;
@@ -1249,6 +1293,19 @@ button:disabled:hover {
 }
 .add-question:hover {
   background: var(--accent-soft);
+}
+.add-question + .add-question {
+  margin-top: 6px;
+}
+.writing-questions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.prompt-list ~ .danger {
+  margin-top: 12px;
+  overflow-wrap: anywhere;
 }
 .metadata-fields label {
   font-size: var(--text-xs);
@@ -1819,13 +1876,92 @@ dialog::backdrop {
 .graph-controls .icon-button {
   margin-left: auto;
 }
+.graph-controls .graph-suggest {
+  margin-left: auto;
+}
+.graph-suggest + .icon-button {
+  margin-left: 0;
+}
+.graph-suggest-count {
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
+.graph-suggest:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+/* Links the chat app suggested, waiting for review over the graph. */
+.link-suggestions {
+  position: absolute;
+  z-index: 5;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(340px, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  padding: 14px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  animation: appear 0.12s ease;
+}
+.link-suggestions h2 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.link-suggestions ul {
+  list-style: none;
+  margin: 0 -6px;
+  padding: 0;
+  overflow-y: auto;
+}
+.link-suggestions label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--secondary);
+  cursor: pointer;
+}
+.link-suggestions label:hover {
+  background: var(--hover);
+}
+.link-suggestions label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.link-suggestions input {
+  flex: none;
+  accent-color: var(--accent);
+}
+.link-suggestions .subtle {
+  font-size: var(--text-xs);
+}
+.link-suggestions-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+}
 .graph-canvas {
   position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
-.graph-canvas svg {
+.graph-canvas > svg {
   position: absolute;
   inset: 0;
   display: block;
@@ -1833,7 +1969,7 @@ dialog::backdrop {
   touch-action: none;
   user-select: none;
 }
-.graph-canvas svg.dragging {
+.graph-canvas > svg.dragging {
   cursor: grabbing;
 }
 .graph-link {
