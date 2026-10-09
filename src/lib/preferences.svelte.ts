@@ -20,6 +20,8 @@ class Preferences {
   colorfulTags = $state(false);
   /** Render Markdown in the editor, showing the source only on the lines being edited. */
   livePreview = $state(true);
+  /** Read the text of PDFs in the library so search and the graph include them. */
+  pdfIndex = $state(true);
   /** A theme being edited, shown live without being saved. */
   preview = $state<ThemeDefinition | null>(null);
   prefersDark = $state(false);
@@ -44,6 +46,7 @@ class Preferences {
       this.uiScale = typeof prefs.uiScale === 'number' ? clampScale(prefs.uiScale) : 1;
       this.colorfulTags = prefs.colorfulTags === true;
       this.livePreview = prefs.livePreview !== false;
+      this.pdfIndex = prefs.pdfIndex !== false;
     } catch {
       /* Ignore invalid visual preferences, never library data. */
     }
@@ -58,13 +61,23 @@ class Preferences {
         | 'uiScale'
         | 'colorfulTags'
         | 'livePreview'
+        | 'pdfIndex'
         | 'customThemes'
       >
     >,
   ) {
     Object.assign(this, patch);
     if (patch.uiScale !== undefined) this.uiScale = clampScale(patch.uiScale);
-    const { theme, readerFont, fontSize, uiScale, colorfulTags, livePreview, customThemes } = this;
+    const {
+      theme,
+      readerFont,
+      fontSize,
+      uiScale,
+      colorfulTags,
+      livePreview,
+      pdfIndex,
+      customThemes,
+    } = this;
     localStorage.setItem(
       KEY,
       JSON.stringify({
@@ -74,6 +87,7 @@ class Preferences {
         uiScale,
         colorfulTags,
         livePreview,
+        pdfIndex,
         customThemes,
       }),
     );

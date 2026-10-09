@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { TextB, TextItalic, Code, Link, ListBullets, Sigma } from 'phosphor-svelte';
+  import { TextB, TextItalic, Code, Link, ListBullets, Sigma, FilePdf } from 'phosphor-svelte';
   import type Editor from './Editor.svelte';
+  import { attachments } from '../lib/attachments.svelte';
+  import { ui } from '../lib/ui.svelte';
   let { editor }: { editor: Editor | undefined } = $props();
 </script>
 
@@ -41,5 +43,10 @@
     title="LaTeX equation"
     onclick={() => editor?.format('$$\n', '\n$$', '\\sum_{i=1}^{n} x_i')}
     ><Sigma size={18} /></button
-  >
+  >{#if attachments.enabled}<span class="toolbar-divider"></span><button
+      class="icon-button"
+      aria-label="Attach PDF"
+      title="Attach a PDF"
+      onclick={() => ui.attachPdf()}><FilePdf size={17} /></button
+    >{/if}
 </div>

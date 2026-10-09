@@ -19,12 +19,15 @@
     Columns,
     WarningCircle,
     DotsThree,
+    FilePdf,
   } from 'phosphor-svelte';
   import Editor from './Editor.svelte';
   import Markdown from './Markdown.svelte';
   import FormatToolbar from './FormatToolbar.svelte';
   import DetailsPanel from './DetailsPanel.svelte';
   import NoteTags from './NoteTags.svelte';
+  import PdfReader from './PdfReader.svelte';
+  import { attachments } from '../lib/attachments.svelte';
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { words } from '../lib/markdown';
@@ -35,6 +38,14 @@
   const active = $derived(ui.active);
   const totalWords = $derived(active ? words(active.body) : 0);
   let menuOpen = $state(false);
+  const reading = $derived(!!ui.reader && !ui.focus);
+
+  // Quotes and links from the PDF reader go to the editor's cursor while it is open.
+  $effect(() => {
+    const open = editor;
+    ui.inserter = open ? (markdown) => open.insertBlock(markdown) : undefined;
+    return () => (ui.inserter = undefined);
+  });
 
   /** Run a menu action, then close the menu. */
   function run(action: () => unknown) {
@@ -129,7 +140,10 @@
                 role="menuitem"
                 onclick={() => run(() => ui.change({ pinned: !active.pinned }))}
                 ><PushPin size={15} />{active.pinned ? 'Unpin note' : 'Pin note'}</button
-              ><button role="menuitem" onclick={() => run(() => ui.exportNote())}
+              >{#if attachments.enabled}<button
+                  role="menuitem"
+                  onclick={() => run(() => ui.attachPdf())}><FilePdf size={15} />Attach PDF…</button
+                >{/if}<button role="menuitem" onclick={() => run(() => ui.exportNote())}
                 ><DownloadSimple size={15} />Export Markdown</button
               ><button role="menuitem" onclick={() => run(() => (ui.focus = !ui.focus))}
                 >{#if ui.focus}<ArrowsInSimple size={15} />Exit focus mode{:else}<ArrowsOutSimple
@@ -181,8 +195,12 @@
           onclick={() => ui.toggleTrash()}>Restore note <ArrowCounterClockwise size={14} /></button
         >
       </div>{/if}
-    <div class="document-body" class:with-panel={ui.panel && !ui.focus}>
-      <section class="writing-surface" class:split-mode={ui.mode === 'split'}>
+    <div class="document-body" class:with-panel={ui.panel && !ui.focus && !reading}>
+      <section
+        class="writing-surface"
+        class:split-mode={ui.mode === 'split' && !reading}
+        class:beside-reader={reading}
+      >
         <div class="document-heading">
           <textarea
             bind:this={titleField}
@@ -206,19 +224,21 @@
           </div>
         </div>
         {#if ui.mode !== 'read'}<FormatToolbar {editor} />{/if}
-        <div class="editor-content" class:two-panes={ui.mode === 'split'}>
+        <div class="editor-content" class:two-panes={ui.mode === 'split' && !reading}>
           {#if ui.mode !== 'read'}<div class="source-pane">
               {#key active.id}<Editor
                   bind:this={editor}
                   value={active.body}
                   onchange={(body) => ui.change({ body })}
-                  linkTitles={() =>
-                    [...library.titles.values()]
+                  linkTitles={() => [
+                    ...[...library.titles.values()]
                       .filter((note) => note.id !== active.id)
-                      .map((note) => note.title.trim())}
+                      .map((note) => note.title.trim()),
+                    ...attachments.list.map((pdf) => pdf.name),
+                  ]}
                 />{/key}
             </div>{/if}
-          {#if ui.mode !== 'write'}<div class="preview-pane">
+          {#if ui.mode === 'read' || (ui.mode === 'split' && !reading)}<div class="preview-pane">
               {#if active.body}<Markdown value={active.body} />{:else}<div class="blank-document">
                   <PencilSimple size={25} weight="light" />
                   <p>Your next idea belongs here.</p>
@@ -229,7 +249,8 @@
             </div>{/if}
         </div>
       </section>
-      {#if ui.panel && !ui.focus}<DetailsPanel note={active} />{/if}
+      {#if reading && ui.reader}{#key ui.reader.name}<PdfReader request={ui.reader} />{/key}
+      {:else if ui.panel && !ui.focus}<DetailsPanel note={active} />{/if}
     </div>
   {:else}<div class="workspace-empty">
       <SunHorizon size={48} weight="thin" />

@@ -3,8 +3,11 @@
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { native } from '../lib/storage';
+  import { attachments } from '../lib/attachments.svelte';
   let { value, compact = false }: { value: string; compact?: boolean } = $props();
-  let html = $derived(renderMarkdown(value, (key) => library.titles.has(key)));
+  let html = $derived(
+    renderMarkdown(value, (key) => library.titles.has(key) || attachments.byKey.has(key)),
+  );
   async function followLink(event: MouseEvent) {
     const anchor = (event.target as HTMLElement).closest('a');
     if (!anchor) return;
