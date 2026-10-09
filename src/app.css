@@ -757,6 +757,50 @@ button:disabled:hover {
   border-top: 1px solid var(--border);
   margin: 5px 4px;
 }
+/* Right-click menus open at the pointer, outside the scrolling note list. */
+.context-menu {
+  position: fixed;
+  top: auto;
+  right: auto;
+  z-index: 60;
+  outline: none;
+}
+.context-menu button:focus-visible,
+.context-menu button[aria-expanded='true'] {
+  background: var(--hover);
+  outline: none;
+}
+.context-menu .menu-caret {
+  margin-left: auto;
+  color: var(--muted);
+}
+.collection-menu {
+  min-width: 180px;
+  max-width: 280px;
+  overflow-y: auto;
+}
+.collection-menu button {
+  padding-left: calc(9px + var(--depth, 0) * 14px);
+}
+.collection-menu button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.collection-menu button[aria-checked='true'] {
+  color: var(--accent);
+}
+.collection-menu button svg {
+  margin-left: auto;
+  flex: none;
+}
+.menu-empty {
+  padding: 7px 9px;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.note-item.menu-target {
+  border-color: var(--accent);
+}
 .document-body {
   display: flex;
   flex: 1;

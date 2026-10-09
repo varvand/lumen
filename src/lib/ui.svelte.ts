@@ -262,10 +262,32 @@ class Workspace {
       this.notify(wasTrashed ? 'Note restored' : 'Moved to Trash. You can restore it anytime.');
     });
   }
-  async exportActive() {
-    if (!this.active) return;
+  /** Move a note into a collection, filing it out of the inbox. */
+  async moveNote(note: Note, collection: string) {
+    library.change(note.id, { collection, inbox: false });
+    await this.afterSave(() => {
+      this.#keepSelection();
+      this.notify(`Moved to ${collection}`);
+    });
+  }
+  /** Trash or restore any note without leaving the current list. */
+  async setTrashed(note: Note, trashed: boolean) {
+    library.change(note.id, { trashed });
+    await this.afterSave(() => {
+      this.#keepSelection();
+      this.notify(trashed ? 'Moved to Trash. You can restore it anytime.' : 'Note restored');
+    });
+  }
+  /** When the open note leaves the current list, open the first note still in it. */
+  #keepSelection() {
+    if (this.screen === 'practice' || this.screen === 'graph') return;
+    const candidates = library.notes.filter((n) => inScreen(n, this.screen, this.collection));
+    if (!candidates.some((n) => n.id === this.activeId)) this.activeId = candidates[0]?.id || '';
+  }
+  async exportNote(note = this.active) {
+    if (!note) return;
     try {
-      if (await storage.export(this.active)) this.notify('Markdown exported');
+      if (await storage.export(note)) this.notify('Markdown exported');
     } catch (e) {
       library.error = `Export failed: ${String(e)}`;
     }

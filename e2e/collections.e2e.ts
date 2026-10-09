@@ -126,3 +126,43 @@ test('remembers settings disclosures across dialog close and app reload', async 
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.locator('.chat-app-details').first()).not.toHaveAttribute('open');
 });
+
+test('moves, trashes and restores a note from its right-click menu', async ({ page }) => {
+  const list = page.getByRole('region', { name: 'Note library' });
+  const note = list.locator('.note-item').filter({ hasText: 'Learning that stays with you' });
+  await note.click({ button: 'right' });
+  const menu = page.getByRole('menu', { name: 'Note actions' });
+  await expect(menu.getByRole('menuitem').first()).toBeFocused();
+
+  await menu.getByRole('menuitem', { name: 'Move to collection' }).hover();
+  const collections = page.getByRole('menu', { name: 'Move to collection' });
+  await expect(
+    collections.getByRole('menuitemradio', { name: 'Learning science' }),
+  ).toHaveAttribute('aria-checked', 'true');
+  await collections.getByRole('menuitemradio', { name: 'Getting started' }).click();
+  await expect(menu).toBeHidden();
+  await expect(note.locator('.note-collection')).toHaveText('Getting started');
+
+  // The keyboard reaches the same menu and its submenu.
+  await note.focus();
+  await page.keyboard.press('Shift+F10');
+  await expect(menu).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight');
+  await expect(collections.getByRole('menuitemradio').first()).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(collections).toBeHidden();
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
+  await expect(note).toBeFocused();
+
+  await note.click({ button: 'right' });
+  await menu.getByRole('menuitem', { name: 'Move to Trash' }).click();
+  await expect(note).toHaveCount(0);
+  await expect(list.getByText('2 notes')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Trash' }).click();
+  await list.locator('.note-item').first().click({ button: 'right' });
+  await menu.getByRole('menuitem', { name: 'Restore note' }).click();
+  await expect(list.locator('.note-item')).toHaveCount(0);
+});
