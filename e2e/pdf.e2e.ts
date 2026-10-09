@@ -2,10 +2,11 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
 const PDF = 'Optics lecture.pdf';
-const bytes = [...readFileSync(new URL(`./fixtures/${PDF}`, import.meta.url))];
+const fixture = (name: string) => [...readFileSync(new URL(`./fixtures/${name}`, import.meta.url))];
 
 /** The desktop app with a controlled IPC boundary and one real PDF on "disk". */
-async function openApp(page: Page, { attached = false, citing = false } = {}) {
+async function openApp(page: Page, { attached = false, citing = false, file = PDF } = {}) {
+  const bytes = fixture(file);
   await page.addInitScript(
     ({ bytes, name, attached, citing }) => {
       const pdf = new Uint8Array(bytes);
@@ -61,7 +62,7 @@ async function openApp(page: Page, { attached = false, citing = false } = {}) {
         },
       };
     },
-    { bytes, name: PDF, attached, citing },
+    { bytes, name: file, attached, citing },
   );
   await page.goto('/');
 }
@@ -159,4 +160,43 @@ test('finds words inside PDFs and shows them in the graph, unless PDFs are turne
   await expect(
     page.getByRole('switch', { name: 'Include PDFs in search and the graph' }),
   ).not.toBeChecked();
+});
+
+test('draws images that need PDF.js decoders, under the desktop app security policy', async ({
+  page,
+}) => {
+  // Serve the page with the desktop app's Content-Security-Policy, so blocked decoders fail here.
+  const { csp } = JSON.parse(
+    readFileSync(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8'),
+  ).app.security;
+  await page.route('/', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      headers: { ...response.headers(), 'content-security-policy': csp },
+    });
+  });
+  const blocked: string[] = [];
+  page.on('console', (message) => {
+    if (/wasm|Content Security Policy|failed to initialize/i.test(message.text()))
+      blocked.push(message.text());
+  });
+  const file = 'JPEG 2000 image.pdf';
+  await openApp(page, { attached: true, citing: true, file });
+  await page.getByRole('button', { name: 'Optics notes' }).click();
+  await page.locator('.preview-pane a.pdf-embed').click();
+  const canvas = page.locator('.pdf-page[data-page="1"] canvas');
+  await expect(canvas).toBeVisible();
+  // The page is white except for a red JPEG 2000 square in its middle.
+  await expect
+    .poll(() =>
+      canvas.evaluate((element: HTMLCanvasElement) => {
+        const [r, g, b] = element
+          .getContext('2d')!
+          .getImageData(element.width / 2, element.height / 2, 1, 1).data;
+        return r > 150 && g < 90 && b < 90;
+      }),
+    )
+    .toBe(true);
+  expect(blocked).toEqual([]);
 });
