@@ -17,6 +17,7 @@
   import { native } from './lib/storage';
   import { themeStyle } from './lib/themes';
   import { updates } from './lib/updates.svelte';
+  import { attachments } from './lib/attachments.svelte';
 
   /** The desktop window draws its content under the macOS traffic lights. */
   const macTitlebar = native && /Mac/.test(navigator.userAgent);
@@ -97,7 +98,12 @@
       library.loading = false;
       if (!library.live.some((n) => n.id === ui.activeId)) ui.activeId = library.live[0]?.id || '';
     });
-    const refresh = () => void library.refresh();
+    void attachments.load();
+    // PDFs added to the attachments folder outside Lumen appear when the window is focused.
+    const refresh = () => {
+      void library.refresh();
+      void attachments.load();
+    };
     const beforeUnload = (e: BeforeUnloadEvent) => {
       if (library.busy) e.preventDefault();
     };

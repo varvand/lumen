@@ -2,6 +2,8 @@ import { library } from './library.svelte';
 import { parseImport } from './markdown';
 import { storage } from './storage';
 import { inCollection } from './collections';
+import { attachments } from './attachments.svelte';
+import { isPdfTarget, pdfName, pdfPage } from './pdf';
 import type { Note, Prompt, Screen } from './types';
 
 export type Modal = 'capture' | 'settings' | 'search' | 'question' | 'obsidian' | null;
@@ -65,6 +67,8 @@ class Workspace {
   /** The question being edited in the question dialog; undefined for a new one. */
   editingPrompt = $state<Prompt>();
   toast = $state('');
+  /** The PDF open beside the note, and the page to show. */
+  reader = $state<{ name: string; page: number } | null>(null);
 
   active = $derived(library.get(this.activeId));
   visibleNotes = $derived.by(() => {
@@ -87,6 +91,8 @@ class Workspace {
 
   /** Set by App so dialogs can open the shared Markdown file picker. */
   importPicker: HTMLInputElement | undefined;
+  /** Set by the open editor: puts Markdown at the cursor as its own paragraph. */
+  inserter: ((markdown: string) => void) | undefined;
   #toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   notify(message: string) {
@@ -160,6 +166,7 @@ class Workspace {
   }
   /** Follow a [[link]]: open the note it names, or create that note when there is none. */
   async openLink(target: string) {
+    if (isPdfTarget(target)) return this.openPdf(pdfName(target), pdfPage(target));
     const note = library.resolve(target);
     if (note) return this.show(note);
     const title = target.split('#')[0].split('/').pop()!.trim();
@@ -170,6 +177,44 @@ class Workspace {
       collection: from && !from.inbox ? from.collection : this.collection || 'Personal',
       inbox: false,
     });
+  }
+  /** Show a PDF from the library beside the open note, at a page. */
+  async openPdf(name: string, page = 1) {
+    if (!attachments.enabled) return this.notify('PDFs open in the desktop app.');
+    const found = attachments.get(name);
+    if (!found) return this.notify(`${name} is not in your library.`);
+    if (this.screen === 'practice' || this.screen === 'graph') {
+      // Quotes from the PDF go into a note, so open one that cites it.
+      const citing = library.live
+        .filter((n) => !n.inbox && n.body.toLowerCase().includes(found.name.toLowerCase()))
+        .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+      if (citing) await this.reveal(citing);
+      else await this.navigate('library');
+    }
+    this.reader = { name: found.name, page };
+  }
+  closeReader() {
+    this.reader = null;
+  }
+  /** Add Markdown to the open note: at the cursor when editing, at the end otherwise. */
+  insert(markdown: string) {
+    const note = this.active;
+    if (!note) return;
+    if (this.inserter && this.mode !== 'read') return this.inserter(markdown);
+    const body = note.body.trimEnd();
+    this.change({ body: `${body}${body ? '\n\n' : ''}${markdown}\n` });
+  }
+  /** Copy PDFs into the library, embed them in the open note, and show the first. */
+  async attachPdf() {
+    try {
+      const added = await attachments.pick();
+      if (!added.length) return;
+      this.insert(added.map((a) => `![[${a.name}]]`).join('\n\n'));
+      this.reader = { name: added[0].name, page: 1 };
+      this.notify(added.length === 1 ? `Added ${added[0].name}` : `Added ${added.length} PDFs`);
+    } catch (e) {
+      library.error = `Could not add the PDF: ${String(e)}`;
+    }
   }
   /** Open a note, staying in the current list when it already shows that note. */
   async show(note: Note) {
