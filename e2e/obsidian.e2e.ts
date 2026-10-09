@@ -53,6 +53,6 @@ test('importing the same vault again adds nothing', async ({ page }) => {
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole('region', { name: 'Note library' }).getByText('6 notes'),
-  ).toBeVisible();
+    page.getByRole('region', { name: 'Note library' }).locator('.list-count'),
+  ).toHaveText('6 notes');
 });

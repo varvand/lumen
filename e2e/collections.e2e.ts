@@ -51,12 +51,12 @@ test('creates nested folders, keeps new notes scoped, and browses all descendant
   await expect(
     list.getByRole('heading', { name: 'Physics / Waves / Interference', exact: true }),
   ).toBeVisible();
-  await expect(list.getByText('2 notes', { exact: true })).toBeVisible();
+  await expect(list.locator('.list-count')).toHaveText('2 notes');
   // Clicking a folder opens it and toggles its subfolders.
   const physics = nav.getByRole('button', { name: 'Physics', exact: true });
   const waves = nav.getByRole('button', { name: 'Physics / Waves', exact: true });
   await physics.click();
-  await expect(list.getByText('3 notes', { exact: true })).toBeVisible();
+  await expect(list.locator('.list-count')).toHaveText('3 notes');
   await expect(waves).toBeHidden();
   await physics.click();
   await expect(waves).toBeVisible();
@@ -159,7 +159,7 @@ test('moves, trashes and restores a note from its right-click menu', async ({ pa
   await note.click({ button: 'right' });
   await menu.getByRole('menuitem', { name: 'Move to Trash' }).click();
   await expect(note).toHaveCount(0);
-  await expect(list.getByText('2 notes')).toBeVisible();
+  await expect(list.locator('.list-count')).toHaveText('2 notes');
 
   await page.getByRole('button', { name: 'Trash' }).click();
   await list.locator('.note-item').first().click({ button: 'right' });
