@@ -6,6 +6,7 @@
   import DocumentPane from './components/DocumentPane.svelte';
   import Practice from './components/Practice.svelte';
   import GraphView from './components/GraphView.svelte';
+  import Home from './components/Home.svelte';
   import SearchModal from './components/modals/SearchModal.svelte';
   import CaptureModal from './components/modals/CaptureModal.svelte';
   import SettingsModal from './components/modals/SettingsModal.svelte';
@@ -13,6 +14,7 @@
   import ObsidianModal from './components/modals/ObsidianModal.svelte';
   import { library } from './lib/library.svelte';
   import { preferences } from './lib/preferences.svelte';
+  import { home } from './lib/home.svelte';
   import { ui } from './lib/ui.svelte';
   import { native } from './lib/storage';
   import { themeStyle } from './lib/themes';
@@ -93,6 +95,8 @@
   onMount(() => {
     ui.importPicker = importInput;
     preferences.load();
+    home.load();
+    if (home.startOnHome) ui.screen = 'home';
     updates.start();
     void library.refresh().finally(() => {
       library.loading = false;
@@ -150,7 +154,9 @@
 >
   <Sidebar />
 
-  {#if ui.screen === 'practice'}
+  {#if ui.screen === 'home'}
+    <main class="practice-container"><Home /></main>
+  {:else if ui.screen === 'practice'}
     <main class="practice-container">
       <Practice
         due={library.due}

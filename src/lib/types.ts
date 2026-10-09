@@ -38,7 +38,7 @@ export interface Library {
   attempts: Attempt[];
   path: string;
 }
-export type Screen = 'library' | 'inbox' | 'practice' | 'graph' | 'trash';
+export type Screen = 'home' | 'library' | 'inbox' | 'practice' | 'graph' | 'trash';
 /** A PDF in the library's attachments folder, named the way notes link to it. */
 export interface Attachment {
   name: string;

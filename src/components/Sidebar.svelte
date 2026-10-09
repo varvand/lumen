@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     SunHorizon,
+    House,
     MagnifyingGlass,
     Plus,
     Files,
@@ -131,6 +132,11 @@
     ><MagnifyingGlass size={16} /><span>Find a note</span><kbd>⌘ K</kbd></button
   >
   <nav class="main-nav">
+    <button
+      class:active={ui.screen === 'home'}
+      title={tip('Home')}
+      onclick={() => ui.navigate('home')}><House size={19} /><span>Home</span></button
+    >
     <button
       class:active={ui.screen === 'library' && !ui.collection}
       title={tip('All notes')}

@@ -10,6 +10,8 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   use: {
     baseURL: 'http://127.0.0.1:1420',
+    // Most tests begin in the note library; home.e2e.ts starts from a fresh browser instead.
+    storageState: 'e2e/fixtures/start-in-library.json',
     viewport: { width: 1400, height: 900 },
     trace: 'retain-on-failure',
   },

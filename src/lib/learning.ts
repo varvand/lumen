@@ -1,4 +1,5 @@
 import type { Attempt, Note, Prompt } from './types';
+import { collectionPath, inCollection } from './collections';
 const DAY = 86_400_000;
 
 // A transparent initial heuristic, not a calibrated memory or mastery model.
@@ -54,3 +55,24 @@ export function practiceQueue(
   return queue;
 }
 export type PracticeItem = ReturnType<typeof practiceQueue>[number];
+
+/** Collections with questions ready, parents included, each with how many questions it holds. */
+export function practiceCollections(due: PracticeItem[]) {
+  const counts = new Map<string, number>();
+  for (const { note } of due) {
+    let path = '';
+    for (const name of collectionPath(note.collection).split(' / ').filter(Boolean)) {
+      path = path ? `${path} / ${name}` : name;
+      counts.set(path, (counts.get(path) || 0) + 1);
+    }
+  }
+  return [...counts]
+    .map(([path, count]) => ({ path, count }))
+    .sort((a, b) => a.path.localeCompare(b.path));
+}
+
+/** Questions from notes in any of the chosen collections or their subfolders; none chosen keeps all. */
+export function inCollections(due: PracticeItem[], chosen: string[]) {
+  if (!chosen.length) return due;
+  return due.filter(({ note }) => chosen.some((folder) => inCollection(note.collection, folder)));
+}
