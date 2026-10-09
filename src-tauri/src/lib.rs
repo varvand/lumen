@@ -1,4 +1,5 @@
 pub mod assistant;
+pub mod attachments;
 pub mod chatgpt;
 pub mod connect;
 pub mod ollama;
@@ -10,6 +11,7 @@ pub mod vault;
 #[cfg(feature = "desktop")]
 mod desktop {
     use super::assistant::commands as assistant;
+    use super::attachments::{Attachment, PdfText};
     use super::chatgpt::commands as chatgpt;
     use super::connect::commands as connect;
     use super::ollama::commands as ollama;
@@ -53,6 +55,32 @@ mod desktop {
         state.with_store(|s| s.record(attempt))
     }
     #[tauri::command(async)]
+    fn add_attachment(state: tauri::State<AppState>, path: String) -> Result<Attachment> {
+        state.with_store(|s| s.add_attachment(&PathBuf::from(path)))
+    }
+    #[tauri::command(async)]
+    fn list_attachments(state: tauri::State<AppState>) -> Result<Vec<Attachment>> {
+        state.with_store(|s| s.attachments())
+    }
+    /// Raw bytes, so a large PDF is not encoded as a JSON array of numbers.
+    #[tauri::command(async)]
+    fn read_attachment(
+        state: tauri::State<AppState>,
+        name: String,
+    ) -> Result<tauri::ipc::Response> {
+        state
+            .with_store(|s| s.read_attachment(&name))
+            .map(tauri::ipc::Response::new)
+    }
+    #[tauri::command(async)]
+    fn pdf_texts(state: tauri::State<AppState>) -> Result<Vec<PdfText>> {
+        state.with_store(|s| s.pdf_texts())
+    }
+    #[tauri::command(async)]
+    fn save_pdf_text(state: tauri::State<AppState>, text: PdfText) -> Result<()> {
+        state.with_store(|s| s.save_pdf_text(text))
+    }
+    #[tauri::command(async)]
     fn export_markdown(path: String, markdown: String) -> Result<()> {
         let path = PathBuf::from(path);
         if path.extension().and_then(|v| v.to_str()) != Some("md") {
@@ -76,6 +104,11 @@ mod desktop {
                 save_note,
                 record_attempt,
                 export_markdown,
+                add_attachment,
+                list_attachments,
+                read_attachment,
+                pdf_texts,
+                save_pdf_text,
                 updates::app_version,
                 updates::check_update,
                 updates::install_update,

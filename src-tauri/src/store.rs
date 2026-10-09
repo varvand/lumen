@@ -133,8 +133,8 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
 }
 
 pub struct Store {
-    root: PathBuf,
-    conn: Connection,
+    pub(crate) root: PathBuf,
+    pub(crate) conn: Connection,
 }
 impl Store {
     pub fn open(root: &Path) -> Result<Self> {
@@ -142,7 +142,7 @@ impl Store {
         let conn = Connection::open(root.join("library.sqlite3")).map_err(err)?;
         conn.busy_timeout(std::time::Duration::from_secs(5))
             .map_err(err)?;
-        conn.execute_batch("PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS notes (id TEXT PRIMARY KEY, payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS file_snapshots (id TEXT PRIMARY KEY, content TEXT NOT NULL); CREATE TABLE IF NOT EXISTS attempts (id TEXT PRIMARY KEY, payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);").map_err(err)?;
+        conn.execute_batch("PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS notes (id TEXT PRIMARY KEY, payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS file_snapshots (id TEXT PRIMARY KEY, content TEXT NOT NULL); CREATE TABLE IF NOT EXISTS attempts (id TEXT PRIMARY KEY, payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL); CREATE TABLE IF NOT EXISTS pdf_text (name TEXT PRIMARY KEY, size INTEGER NOT NULL, pages TEXT NOT NULL);").map_err(err)?;
         Ok(Self {
             root: root.to_path_buf(),
             conn,

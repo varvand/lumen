@@ -9,11 +9,15 @@ import rehypeStringify from 'rehype-stringify';
 import type { Nodes, Parent, PhrasingContent, Root } from 'mdast';
 import type { VFile } from 'vfile';
 import { linkKey, linkLabel, WIKILINK } from './links';
+import { isPdfTarget } from './pdf';
 
 /** Whether a [[link]] target names an existing note, by its link key. */
 export type LinkResolver = (key: string) => boolean;
 
-/** Turn [[Title|alias]] in text into links Lumen opens as notes, marking missing ones. */
+/**
+ * Turn [[Title|alias]] in text into links Lumen opens as notes, marking missing ones.
+ * Links to PDFs open them beside the note; an embed, ![[File.pdf]], shows as a card.
+ */
 function remarkWikilinks() {
   return (tree: Root, file: VFile) => {
     const exists = file.data.linkExists as LinkResolver | undefined;
@@ -29,19 +33,23 @@ function remarkWikilinks() {
         let last = 0;
         for (const match of child.value.matchAll(WIKILINK)) {
           const [raw, target, alias] = match;
-          if (match.index > last)
-            parts.push({ type: 'text', value: child.value.slice(last, match.index) });
+          const pdf = isPdfTarget(target);
+          const embed = pdf && child.value[match.index - 1] === '!';
+          const start = embed ? match.index - 1 : match.index;
+          if (start > last) parts.push({ type: 'text', value: child.value.slice(last, start) });
           const missing = exists ? !exists(linkKey(target)) : false;
+          const className = missing ? ['wikilink', 'wikilink-missing'] : ['wikilink'];
+          if (pdf) className.push('pdf-link');
+          if (embed) className.push('pdf-embed');
           parts.push({
             type: 'link',
             url: '#',
-            title: missing ? `Create “${linkLabel(target)}”` : null,
-            data: {
-              hProperties: {
-                className: missing ? ['wikilink', 'wikilink-missing'] : ['wikilink'],
-                dataWikilink: target.trim(),
-              },
-            },
+            title: missing
+              ? pdf
+                ? `${linkLabel(target)} is not in your library`
+                : `Create “${linkLabel(target)}”`
+              : null,
+            data: { hProperties: { className, dataWikilink: target.trim() } },
             children: [{ type: 'text', value: linkLabel(target, alias) }],
           });
           last = match.index + raw.length;
@@ -71,7 +79,14 @@ const processor = unified()
         ...(defaultSchema.attributes?.a || []).filter(
           (attribute) => !Array.isArray(attribute) || attribute[0] !== 'className',
         ),
-        ['className', 'data-footnote-backref', 'wikilink', 'wikilink-missing'],
+        [
+          'className',
+          'data-footnote-backref',
+          'wikilink',
+          'wikilink-missing',
+          'pdf-link',
+          'pdf-embed',
+        ],
         'dataWikilink',
       ],
     },
@@ -95,6 +110,7 @@ export function words(text: string): number {
 }
 export function excerpt(body: string): string {
   return body
+    .replace(/!\[\[/g, '[[')
     .replace(/```[\s\S]*?```/g, '')
     .replace(/\$\$[\s\S]*?\$\$/g, '')
     .replace(/[#*_>`\[\]]/g, '')

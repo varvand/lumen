@@ -39,3 +39,15 @@ export interface Library {
   path: string;
 }
 export type Screen = 'library' | 'inbox' | 'practice' | 'graph' | 'trash';
+/** A PDF in the library's attachments folder, named the way notes link to it. */
+export interface Attachment {
+  name: string;
+  size: number;
+  addedAt: number;
+}
+/** Text of each page of a PDF, read for a file of this size. */
+export interface PdfText {
+  name: string;
+  size: number;
+  pages: string[];
+}

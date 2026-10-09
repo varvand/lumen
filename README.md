@@ -74,6 +74,7 @@ Install from the DMG into Applications before updating. An app run directly from
 - Library search, collections, tags, pinning, a capture inbox, and recoverable Trash.
 - `[[Links]]` between notes: type `[[` to pick a note title, click a link in the preview to open that note (or create it), and see "Linked from" notes in the details panel. Obsidian imports keep their links.
 - A graph page that draws notes and their links. Drag notes, pan, zoom with the scroll wheel, and click a note to open it.
+- PDFs beside your notes (desktop app): attach a PDF and it opens next to the note. Select text to quote it into the note with a link back to its page, such as `[[Lecture 4.pdf#page=12]]`. PDFs are kept as files in the library's `attachments` folder. Search and the graph can include the text of your PDFs, read on your computer; turn this off in Settings → Your library.
 - Debounced autosave, flush on note changes and desktop close, atomic file replacement, and revision checks for conflicting saves.
 - Markdown file import, paste capture, and export.
 - Recall, explanation, and application questions with hidden suggested answers, self-assessed attempts, and adaptive review dates.

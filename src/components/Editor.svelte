@@ -33,6 +33,8 @@
   let internal = '';
   let syncing = false;
   const preview = new Compartment();
+  /** Until the editor is clicked into, inserted blocks go at the end, not at the top. */
+  let placedCursor = false;
 
   export function format(before: string, after = before, fallback = 'text') {
     if (!view) return;
@@ -43,6 +45,20 @@
       selection: { anchor: from + before.length, head: from + before.length + selected.length },
     });
     view.focus();
+  }
+  /** Insert Markdown as its own paragraph after the cursor's line, and put the cursor after it. */
+  export function insertBlock(markdown: string) {
+    if (!view) return;
+    const { doc } = view.state;
+    const line = placedCursor ? doc.lineAt(view.state.selection.main.head) : doc.line(doc.lines);
+    const before = line.text.trim() ? '\n\n' : line.number > 1 ? '\n' : '';
+    const insert = `${before}${markdown}\n`;
+    view.dispatch({
+      changes: { from: line.to, insert },
+      selection: { anchor: line.to + insert.length },
+      scrollIntoView: true,
+    });
+    placedCursor = true;
   }
   onMount(() => {
     internal = value;
@@ -137,6 +153,7 @@
             },
           }),
           EditorView.updateListener.of((update) => {
+            if (update.focusChanged && update.view.hasFocus) placedCursor = true;
             if (update.docChanged) {
               internal = update.state.doc.toString();
               if (!syncing) onchange(internal);

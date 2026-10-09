@@ -11,6 +11,7 @@
   import { ui } from '../../lib/ui.svelte';
   import { native } from '../../lib/storage';
   import { formatRelease, updates } from '../../lib/updates.svelte';
+  import { attachments } from '../../lib/attachments.svelte';
 
   const [light, dark] = BUILTIN_THEMES;
   let editing = $state<ThemeDefinition | null>(null);
@@ -141,6 +142,25 @@
         ><DownloadSimple size={16} />Import Obsidian vault</button
       >
     </div>
+    {#if attachments.enabled}<label class="setting-row"
+        >Include PDFs in search and the graph<input
+          type="checkbox"
+          role="switch"
+          checked={preferences.pdfIndex}
+          onchange={(e) => {
+            preferences.set({ pdfIndex: e.currentTarget.checked });
+            if (preferences.pdfIndex) void attachments.index();
+          }}
+        /></label
+      >
+      <p class="helper">
+        {preferences.pdfIndex
+          ? 'Lumen reads the text of your PDFs on this computer, so ⌘K finds words inside them and the graph shows which notes cite them.'
+          : 'PDFs still open beside your notes; search and the graph leave them out.'}
+        {#if attachments.indexing}Reading {attachments.indexing}…{:else if attachments.list.length}{attachments
+            .list.length}
+          {attachments.list.length === 1 ? 'PDF' : 'PDFs'} in your library.{/if}
+      </p>{/if}
   </div>
   {#if native}<AssistantSettings />{/if}
   <ChatAppsSettings />
