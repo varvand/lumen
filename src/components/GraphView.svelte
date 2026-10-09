@@ -8,7 +8,7 @@
   import type { Note } from '../lib/types';
   import { tutor, PROVIDER_NAMES, type Provider } from '../lib/tutor';
   import {
-    checkedNotes,
+    checkedPairs,
     linkRequest,
     parseLinks,
     pendingLinks,
@@ -79,20 +79,20 @@
     previewPair = [];
   }
 
-  /** Show saved suggestions, asking the chat app only about notes not checked yet. */
+  /** Show saved suggestions, asking the chat app only about likely pairs not checked yet. */
   async function suggestLinks() {
     if (!provider || finding) return;
-    const request = linkRequest(library.live, library.links, checkedNotes.load());
+    const request = linkRequest(library.live, library.links, checkedPairs.load());
     if (!request) {
       if (saved.length) show(saved);
-      else ui.notify('Every note is linked or has already been checked.');
+      else ui.notify('No new likely links. Related notes found later will be checked then.');
       return;
     }
     finding = true;
     try {
       const answer = await tutor.ask(provider, request.prompt, 'light');
-      // Checked notes are not sent again until they are edited.
-      checkedNotes.save(request.notes.slice(0, request.described));
+      // Checked pairs are not sent again until either note is edited.
+      checkedPairs.save(request.pairs);
       remaining = request.remaining;
       const found = parseLinks(answer, request).map(
         ({ from, to }) => [from.id, to.id] as [string, string],
@@ -102,7 +102,7 @@
       if (all.length) show(all);
       else
         ui.notify(
-          `No clear links among ${request.described} unlinked ${request.described === 1 ? 'note' : 'notes'}.`,
+          `No clear links among ${request.pairs.length} likely ${request.pairs.length === 1 ? 'pair' : 'pairs'}.`,
         );
     } catch (e) {
       ui.notify(String(e).replace(/^Error: /, ''));
@@ -386,7 +386,7 @@
             </ul>
             <p class="subtle">
               Each link is added to the end of the first note. Unticked links are discarded.{remaining
-                ? ` ${remaining} more unlinked ${remaining === 1 ? 'note' : 'notes'} next time.`
+                ? ` ${remaining} more likely ${remaining === 1 ? 'pair' : 'pairs'} next time.`
                 : ''}
             </p>
             <div class="link-suggestions-actions">
