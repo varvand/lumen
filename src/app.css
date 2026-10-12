@@ -3818,3 +3818,8 @@ svg.hovering .graph-link:not(.near) {
     max-width: 120px;
   }
 }
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+}

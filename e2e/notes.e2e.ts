@@ -223,3 +223,73 @@ test('previews the math under the cursor', async ({ page }) => {
   await page.keyboard.type(' $\\frac{1}{$');
   await expect(preview).toHaveClass(/cm-math-error/);
 });
+
+for (const event of ['paste', 'drop'] as const) {
+  test(`${event} embeds an image, survives reload and supports undo`, async ({ page }) => {
+    await page.getByRole('button', { name: 'New note' }).click();
+    await page.getByRole('textbox', { name: 'Note title' }).fill(`Image ${event}`);
+    const editor = page.getByRole('textbox', { name: 'Markdown editor' });
+    await editor.click();
+    await editor.pressSequentially('Before');
+    await editor.evaluate((element, type) => {
+      const png = Uint8Array.from(
+        atob(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+        ),
+        (c) => c.charCodeAt(0),
+      );
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([png], 'Diagram.png', { type: 'image/png' }));
+      const rect = element.getBoundingClientRect();
+      element.dispatchEvent(
+        type === 'paste'
+          ? new ClipboardEvent('paste', {
+              clipboardData: transfer,
+              bubbles: true,
+              cancelable: true,
+            })
+          : new DragEvent('drop', {
+              dataTransfer: transfer,
+              clientX: rect.left + 10,
+              clientY: rect.top + 10,
+              bubbles: true,
+              cancelable: true,
+            }),
+      );
+    }, event);
+    const image = page.locator('.cm-lp-image');
+    await expect(image).toBeVisible();
+    await expect(image).toHaveAttribute('alt', 'Diagram');
+    await editor.press('ControlOrMeta+z');
+    await expect(image).toHaveCount(0);
+    await expect(editor).toContainText('Before');
+    await editor.press(process.platform === 'darwin' ? 'Meta+Shift+z' : 'Control+y');
+    await expect(image).toBeVisible();
+    await expect(page.getByText(/^(Saving…|Unsaved changes)$/)).toHaveCount(0);
+    await page.reload();
+    await page
+      .getByRole('region', { name: 'Note library' })
+      .getByRole('heading', { name: `Image ${event}`, exact: true })
+      .click();
+    await page.getByRole('button', { name: 'Read', exact: true }).click();
+    const savedImage = page.locator('.prose img');
+    await expect(savedImage).toBeVisible();
+    expect(await savedImage.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBe(1);
+  });
+}
+
+test('rejects unsupported clipboard images without changing the note', async ({ page }) => {
+  await page.getByRole('button', { name: 'New note' }).click();
+  const editor = page.getByRole('textbox', { name: 'Markdown editor' });
+  await editor.click();
+  await editor.pressSequentially('Keep this');
+  await editor.evaluate((element) => {
+    const transfer = new DataTransfer();
+    transfer.items.add(new File(['<svg/>'], 'diagram.svg', { type: 'image/svg+xml' }));
+    element.dispatchEvent(
+      new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }),
+    );
+  });
+  await expect(page.getByText('Use a PNG, JPEG, GIF, WebP or AVIF image.')).toBeVisible();
+  await expect(editor).toHaveText('Keep this');
+});

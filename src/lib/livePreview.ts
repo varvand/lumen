@@ -2,6 +2,7 @@ import katex from 'katex';
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { StateField, type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view';
+import { isEmbeddedImage } from './images';
 import { mathSpans } from './math';
 
 /** Rendered $…$ or $$…$$, shown where its source is hidden. */
@@ -34,6 +35,26 @@ class MathWidget extends WidgetType {
   }
   ignoreEvent() {
     return false;
+  }
+}
+
+/** Embedded images stay visible without exposing their base64 source in the editor. */
+class ImageWidget extends WidgetType {
+  constructor(
+    readonly source: string,
+    readonly alt: string,
+  ) {
+    super();
+  }
+  eq(other: ImageWidget) {
+    return other.source === this.source && other.alt === this.alt;
+  }
+  toDOM() {
+    const image = document.createElement('img');
+    image.src = this.source;
+    image.alt = this.alt;
+    image.className = 'cm-lp-image';
+    return image;
   }
 }
 
@@ -128,6 +149,16 @@ function build(state: EditorState): DecorationSet {
         return false;
       }
       if (inMath(from, to)) return false;
+      if (name === 'Image') {
+        const source = doc.sliceString(from, to);
+        const match = /^!\[([^\]]*)\]\((data:[^)]+)\)$/.exec(source);
+        if (match && isEmbeddedImage(match[2])) {
+          decorations.push(
+            Decoration.replace({ widget: new ImageWidget(match[2], match[1]) }).range(from, to),
+          );
+          return false;
+        }
+      }
       const heading = /^ATXHeading(\d)$/.exec(name);
       if (heading) {
         decorations.push(line(`cm-lp-h${heading[1]}`).range(doc.lineAt(from).from));
@@ -208,6 +239,12 @@ export function livePreview() {
   return [
     livePreviewField,
     EditorView.baseTheme({
+      '.cm-lp-image': {
+        maxWidth: '100%',
+        maxHeight: '480px',
+        objectFit: 'contain',
+        verticalAlign: 'middle',
+      },
       '.cm-lp-h1': { fontSize: '1.6em', lineHeight: '1.5' },
       '.cm-lp-h2': { fontSize: '1.35em', lineHeight: '1.5' },
       '.cm-lp-h3': { fontSize: '1.15em' },

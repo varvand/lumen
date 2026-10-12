@@ -9,6 +9,7 @@ import rehypeStringify from 'rehype-stringify';
 import type { Nodes, Parent, PhrasingContent, Root } from 'mdast';
 import type { VFile } from 'vfile';
 import { linkKey, linkLabel, WIKILINK } from './links';
+import { isEmbeddedImage } from './images';
 import { isPdfTarget } from './pdf';
 
 /** Whether a [[link]] target names an existing note, by its link key. */
@@ -63,6 +64,20 @@ function remarkWikilinks() {
   };
 }
 
+/** Keep data URLs restricted to embedded raster images, never links or SVG. */
+function restrictImageData() {
+  return (tree: import('hast').Root) => {
+    const visit = (node: import('hast').Nodes) => {
+      if (node.type === 'element' && node.tagName === 'img') {
+        const src = String(node.properties.src ?? '');
+        if (/^data:/i.test(src) && !isEmbeddedImage(src)) delete node.properties.src;
+      }
+      if ('children' in node) node.children.forEach(visit);
+    };
+    visit(tree);
+  };
+}
+
 // Sanitize user Markdown before KaTeX adds its trusted rendering markup.
 const processor = unified()
   .use(remarkParse)
@@ -70,8 +85,13 @@ const processor = unified()
   .use(remarkMath)
   .use(remarkWikilinks)
   .use(remarkRehype)
+  .use(restrictImageData)
   .use(rehypeSanitize, {
     ...defaultSchema,
+    protocols: {
+      ...defaultSchema.protocols,
+      src: [...(defaultSchema.protocols?.src || []), 'data'],
+    },
     attributes: {
       ...defaultSchema.attributes,
       code: [['className', /^language-./, 'math-inline', 'math-display']],
