@@ -113,3 +113,5 @@ Fonts, editor, and math assets are bundled. Markdown HTML is sanitized before re
 The interface uses a cool neutral palette and muted green, DM Sans for controls, Newsreader for documents, and IBM Plex Mono for source. The document serif serves a publication-like reading surface; controls remain sans serif. Motion is limited to short state transitions, with reduced-motion support.
 
 Icons, including the application mark, are adapted from Phosphor Icons (MIT). Font packages retain their bundled licenses. See `assets/THIRD_PARTY.md`.
+
+Paste an image from the clipboard or drag image files into the Markdown editor to add them to a note. PNG, JPEG, GIF, WebP and AVIF images are embedded in the note and included in Markdown exports. Images must fit within the 2 MB note limit; use smaller images for larger screenshots.

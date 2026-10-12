@@ -16,6 +16,8 @@
   import { livePreview } from '../lib/livePreview';
   import { preferences } from '../lib/preferences.svelte';
   import { mathPreview } from '../lib/math';
+  import { imageInput } from '../lib/images';
+  import { ui } from '../lib/ui.svelte';
   import { linkCompletion } from '../lib/linkCompletion';
 
   let {
@@ -71,12 +73,13 @@
           preview.of(preferences.livePreview ? livePreview() : []),
           linkCompletion(() => linkTitles()),
           history(),
+          imageInput((message) => ui.notify(message)),
           drawSelection(),
           highlightActiveLine(),
           highlightSelectionMatches(),
           mathPreview(),
           placeholder(
-            'An idea starts here…\n\nWrite in Markdown. Use $…$ for inline math and $$…$$ for equations.',
+            'An idea starts here…\n\nWrite in Markdown. Paste or drop images here. Use $…$ for inline math and $$…$$ for equations.',
           ),
           EditorView.lineWrapping,
           EditorView.contentAttributes.of({ 'aria-label': 'Markdown editor', spellcheck: 'true' }),

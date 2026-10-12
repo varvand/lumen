@@ -17,6 +17,14 @@ describe('Markdown and math', () => {
     expect(html).not.toContain('href="javascript:');
     expect(html).toContain('<table>');
   });
+  it('renders embedded raster images while rejecting SVG data and data links', () => {
+    const html = renderMarkdown(
+      '![photo](data:image/png;base64,aGVsbG8=)\n\n![svg](data:image/svg+xml;base64,aGVsbG8=)\n\n[link](data:image/png;base64,aGVsbG8=)',
+    );
+    expect(html).toContain('src="data:image/png;base64,aGVsbG8="');
+    expect(html).not.toContain('src="data:image/svg');
+    expect(html).not.toContain('href="data:');
+  });
   it('preserves equations when importing a titled file with Windows line endings', () => {
     const note = parseImport('\uFEFF# My note\r\n\r\n$$\\sum x_i$$\r\n', 'test.md');
     expect(note.title).toBe('My note');

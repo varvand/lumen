@@ -10,7 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{ "title": "Lumen", "width": 1440, "height": 940, "minWidth": 820, "minHeight": 600, "backgroundColor": "#f2f4f2", "titleBarStyle": "Overlay", "hiddenTitle": true, "trafficLightPosition": { "x": 20, "y": 24 } }],
+    "windows": [{ "dragDropEnabled": false, "title": "Lumen", "width": 1440, "height": 940, "minWidth": 820, "minHeight": 600, "backgroundColor": "#f2f4f2", "titleBarStyle": "Overlay", "hiddenTitle": true, "trafficLightPosition": { "x": 20, "y": 24 } }],
     "security": {
       "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https://api.open-meteo.com https://geocoding-api.open-meteo.com; object-src 'none'; base-uri 'self'"
     }
