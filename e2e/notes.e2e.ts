@@ -263,7 +263,7 @@ for (const event of ['paste', 'drop'] as const) {
     await editor.press('ControlOrMeta+z');
     await expect(image).toHaveCount(0);
     await expect(editor).toContainText('Before');
-    await editor.press('ControlOrMeta+Shift+z');
+    await editor.press(process.platform === 'darwin' ? 'Meta+Shift+z' : 'Control+y');
     await expect(image).toBeVisible();
     await expect(page.getByText(/^(Saving…|Unsaved changes)$/)).toHaveCount(0);
     await page.reload();
