@@ -166,3 +166,46 @@ test('moves, trashes and restores a note from its right-click menu', async ({ pa
   await menu.getByRole('menuitem', { name: 'Restore note' }).click();
   await expect(list.locator('.note-item')).toHaveCount(0);
 });
+
+test('right-clicking a collection renames it and deletes it into Trash', async ({ page }) => {
+  await page.getByRole('button', { name: 'New collection', exact: true }).click();
+  await createFolder(page, 'Chemistry');
+  const nav = page.getByRole('navigation', { name: 'Collections' });
+  await nav.getByRole('button', { name: 'Chemistry', exact: true }).click({ button: 'right' });
+  const menu = page.getByRole('menu', { name: 'Collection actions' });
+  await menu.getByRole('menuitem', { name: 'Rename' }).click();
+  await page.getByRole('textbox', { name: 'Rename Chemistry' }).fill('Biochemistry');
+  await page.keyboard.press('Enter');
+  const renamed = nav.getByRole('button', { name: 'Biochemistry', exact: true });
+  await expect(renamed).toBeVisible();
+  await expect(nav.getByRole('button', { name: 'Chemistry', exact: true })).toBeHidden();
+
+  await renamed.click({ button: 'right' });
+  await menu.getByRole('menuitem', { name: 'Delete collection' }).click();
+  await menu.getByRole('menuitem', { name: 'Trash 1 note?' }).click();
+  await expect(renamed).toBeHidden();
+  await expect(page.getByText('Moved 1 note to Trash')).toBeVisible();
+});
+
+test('dragging a collection changes its place among its siblings', async ({ page }) => {
+  for (const name of ['Alpha', 'Omega']) {
+    await page.getByRole('button', { name: 'New collection', exact: true }).click();
+    await createFolder(page, name);
+  }
+  const nav = page.getByRole('navigation', { name: 'Collections' });
+  const order = () =>
+    nav
+      .locator(':scope > .folder-level > li > .folder-row .folder-link')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('aria-label')));
+  const before = await order();
+  expect(before.indexOf('Alpha')).toBeLessThan(before.indexOf('Omega'));
+  await nav
+    .getByRole('button', { name: 'Omega', exact: true })
+    .dragTo(nav.getByRole('button', { name: 'Alpha', exact: true }), {
+      targetPosition: { x: 10, y: 2 },
+    });
+  const after = await order();
+  expect(after.indexOf('Omega')).toBe(after.indexOf('Alpha') - 1);
+  await page.reload();
+  expect(await order()).toEqual(after);
+});

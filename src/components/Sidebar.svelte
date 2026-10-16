@@ -22,7 +22,14 @@
   import { library } from '../lib/library.svelte';
   import { ui } from '../lib/ui.svelte';
   import { updates } from '../lib/updates.svelte';
-  import { collectionPath, inCollection, type CollectionFolder } from '../lib/collections';
+  import {
+    collectionPath,
+    inCollection,
+    orderFolders,
+    reorderFolders,
+    type CollectionFolder,
+  } from '../lib/collections';
+  import CollectionMenu from './CollectionMenu.svelte';
 
   /** Collapsed, the sidebar is an icon rail; labels move into tooltips. */
   const tip = (label: string) => (ui.sidebarCollapsed ? label : undefined);
@@ -32,6 +39,68 @@
   let parentFolder = $state('');
   let creating = $state(false);
   const collectionsOpen = $derived(ui.isExpanded('collections'));
+  const folderTree = $derived(orderFolders(library.folders, ui.collectionOrder));
+
+  let menu = $state<{ path: string; x: number; y: number; trigger: HTMLElement }>();
+  function openMenu(event: MouseEvent | KeyboardEvent, path: string) {
+    event.preventDefault();
+    const trigger = event.currentTarget as HTMLElement;
+    // A menu opened from the keyboard has no pointer position, so anchor it to the row.
+    const row = trigger.getBoundingClientRect();
+    const pointer = 'clientX' in event && (event.clientX || event.clientY);
+    menu = {
+      path,
+      x: pointer ? event.clientX : row.left + 16,
+      y: pointer ? event.clientY : row.bottom,
+      trigger,
+    };
+  }
+
+  /** The folder being renamed in place, and its new name. */
+  let renaming = $state('');
+  let newName = $state('');
+  function startRename(path: string) {
+    renaming = path;
+    newName = path.split(' / ').pop() ?? '';
+  }
+  function finishRename() {
+    const from = renaming;
+    if (!from) return;
+    renaming = '';
+    const name = collectionPath(newName);
+    const parent = from.split(' / ').slice(0, -1).join(' / ');
+    if (name) void ui.renameCollection(from, parent ? `${parent} / ${name}` : name);
+  }
+
+  /** Dragging reorders a folder among its siblings; its place is remembered per device. */
+  const DRAG_TYPE = 'application/x-lumen-collection';
+  let dragging = $state<{ path: string; siblings: string[] }>();
+  let dropTarget = $state<{ path: string; after: boolean }>();
+  function dragOver(event: DragEvent, path: string) {
+    if (!dragging || !dragging.siblings.includes(path) || dragging.path === path) return;
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
+    const row = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    dropTarget = { path, after: event.clientY > row.top + row.height / 2 };
+  }
+  function drop(event: DragEvent) {
+    if (!dragging || !dropTarget) return;
+    event.preventDefault();
+    ui.setCollectionOrder(
+      reorderFolders(
+        ui.collectionOrder,
+        dragging.siblings,
+        dragging.path,
+        dropTarget.path,
+        dropTarget.after,
+      ),
+    );
+    endDrag();
+  }
+  function endDrag() {
+    dragging = undefined;
+    dropTarget = undefined;
+  }
 
   /** Name a collection in place; it starts with one blank note, since notes define collections. */
   function startCollection(parent = '') {
@@ -42,7 +111,10 @@
     collectionName = '';
     naming = true;
   }
-  const focus = (node: HTMLInputElement) => node.focus();
+  const focus = (node: HTMLInputElement) => {
+    node.focus();
+    node.select();
+  };
   async function createCollection() {
     const child = collectionPath(collectionName);
     if (!child || creating) return;
@@ -74,7 +146,25 @@
       {@const expanded = ui.isExpanded(`folder:${folder.path}`)}
       {@const active = ui.screen === 'library' && collectionPath(ui.collection) === folder.path}
       <li>
-        <div class="folder-row" class:active style={`--folder-depth: ${depth}`}>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="folder-row"
+          class:active
+          class:menu-target={menu?.path === folder.path}
+          class:dragging={dragging?.path === folder.path}
+          class:drop-before={dropTarget?.path === folder.path && !dropTarget.after}
+          class:drop-after={dropTarget?.path === folder.path && dropTarget.after}
+          style={`--folder-depth: ${depth}`}
+          draggable={renaming !== folder.path}
+          ondragstart={(e) => {
+            e.dataTransfer?.setData(DRAG_TYPE, folder.path);
+            if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+            dragging = { path: folder.path, siblings: items.map((item) => item.path) };
+          }}
+          ondragover={(e) => dragOver(e, folder.path)}
+          ondrop={drop}
+          ondragend={endDrag}
+        >
           {#if folder.children.length}
             <button
               class="folder-disclosure"
@@ -85,22 +175,46 @@
               {#if expanded}<CaretDown size={11} />{:else}<CaretRight size={11} />{/if}
             </button>
           {:else}<span class="folder-disclosure-spacer"></span>{/if}
-          <button
-            class="folder-link"
-            aria-label={folder.path}
-            aria-current={active ? 'page' : undefined}
-            title={folder.path}
-            onclick={() => {
-              if (folder.children.length) ui.setExpanded(`folder:${folder.path}`, !expanded);
-              void ui.browse('library', folder.path);
-            }}
-          >
-            {#if active}<FolderOpen size={16} />{:else}<FolderSimple size={16} />{/if}
-            <span class="folder-label">{folder.name}</span><span
-              class="folder-count"
-              aria-hidden="true">{folder.count}</span
+          {#if renaming === folder.path}
+            <form
+              class="folder-rename"
+              onsubmit={(e) => {
+                e.preventDefault();
+                finishRename();
+              }}
             >
-          </button>
+              <FolderSimple size={16} /><input
+                use:focus
+                aria-label={`Rename ${folder.path}`}
+                maxlength="80"
+                bind:value={newName}
+                onblur={finishRename}
+                onkeydown={(e) => {
+                  if (e.key === 'Escape') renaming = '';
+                }}
+              />
+            </form>
+          {:else}<button
+              class="folder-link"
+              aria-label={folder.path}
+              aria-current={active ? 'page' : undefined}
+              title={folder.path}
+              onclick={() => {
+                if (folder.children.length) ui.setExpanded(`folder:${folder.path}`, !expanded);
+                void ui.browse('library', folder.path);
+              }}
+              oncontextmenu={(e) => openMenu(e, folder.path)}
+              onkeydown={(e) => {
+                if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10'))
+                  openMenu(e, folder.path);
+              }}
+            >
+              {#if active}<FolderOpen size={16} />{:else}<FolderSimple size={16} />{/if}
+              <span class="folder-label">{folder.name}</span><span
+                class="folder-count"
+                aria-hidden="true">{folder.count}</span
+              >
+            </button>{/if}
           <button
             class="folder-add"
             title="New subfolder"
@@ -233,7 +347,7 @@
         </div>
       </form>
     {/if}
-    {@render folders(library.folders)}
+    {@render folders(folderTree)}
     {#if !library.folders.length && !naming}<p class="collections-empty">
         Keep related notes together. Create your first collection above.
       </p>{/if}
@@ -269,3 +383,9 @@
     </div>
   </div>
 </aside>
+{#if menu}<CollectionMenu
+    {...menu}
+    onsubfolder={() => startCollection(menu!.path)}
+    onrename={() => startRename(menu!.path)}
+    onclose={() => (menu = undefined)}
+  />{/if}

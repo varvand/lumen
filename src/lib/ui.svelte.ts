@@ -1,7 +1,7 @@
 import { library } from './library.svelte';
 import { parseImport } from './markdown';
 import { storage } from './storage';
-import { inCollection } from './collections';
+import { inCollection, renamedCollection } from './collections';
 import { attachments } from './attachments.svelte';
 import { isPdfTarget, pdfName, pdfPage } from './pdf';
 import type { Note, Prompt, Screen } from './types';
@@ -13,6 +13,7 @@ const SIDEBAR_KEY = 'lumen.sidebarCollapsed';
 const LIST_KEY = 'lumen.listCollapsed';
 const PANEL_KEY = 'lumen.detailsOpen';
 const DISCLOSURES_KEY = 'lumen.disclosures';
+const ORDER_KEY = 'lumen.collectionOrder';
 function storedFlag(key: string, fallback = false) {
   try {
     const stored = localStorage.getItem(key);
@@ -27,6 +28,14 @@ function storedDisclosures(): Record<string, boolean> {
     return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   } catch {
     return {};
+  }
+}
+function storedOrder(): string[] {
+  try {
+    const value = JSON.parse(localStorage.getItem(ORDER_KEY) || '[]');
+    return Array.isArray(value) ? value.filter((item) => typeof item === 'string') : [];
+  } catch {
+    return [];
   }
 }
 function remember(key: string, value: string) {
@@ -61,6 +70,8 @@ class Workspace {
   mode = $state<EditorMode>('read');
   panel = $state(storedFlag(PANEL_KEY, typeof window !== 'undefined' && window.innerWidth >= 1300));
   disclosures = $state(storedDisclosures());
+  /** Collection paths in the order the user dragged them into; remembered per device. */
+  collectionOrder = $state(storedOrder());
   /** The left sidebar shows as an icon rail; remembered per device. */
   sidebarCollapsed = $state(storedFlag(SIDEBAR_KEY));
   /** The note list column is hidden, leaving more room for the open note. */
@@ -126,6 +137,10 @@ class Workspace {
   setExpanded(id: string, open: boolean) {
     this.disclosures = { ...this.disclosures, [id]: open };
     remember(DISCLOSURES_KEY, JSON.stringify(this.disclosures));
+  }
+  setCollectionOrder(order: string[]) {
+    this.collectionOrder = order;
+    remember(ORDER_KEY, JSON.stringify(order));
   }
   /** Open a list the user picked, showing the note list if it was hidden. */
   browse(next: Screen, collection = '') {
@@ -322,6 +337,38 @@ class Workspace {
     await this.afterSave(() => {
       this.#keepSelection();
       this.notify(trashed ? 'Moved to Trash. You can restore it anytime.' : 'Note restored');
+    });
+  }
+  /** Rename a collection and its subfolders, keeping their place, order, and disclosure. */
+  async renameCollection(from: string, to: string) {
+    if (!to || to === from) return;
+    for (const note of library.notes)
+      if (!note.inbox && inCollection(note.collection, from))
+        library.change(note.id, { collection: renamedCollection(note.collection, from, to) });
+    this.setCollectionOrder(this.collectionOrder.map((path) => renamedCollection(path, from, to)));
+    const disclosures: Record<string, boolean> = {};
+    for (const [id, open] of Object.entries(this.disclosures))
+      disclosures[
+        id.startsWith('folder:') ? `folder:${renamedCollection(id.slice(7), from, to)}` : id
+      ] = open;
+    this.disclosures = disclosures;
+    remember(DISCLOSURES_KEY, JSON.stringify(disclosures));
+    await this.afterSave(() => {
+      if (this.collection && inCollection(this.collection, from))
+        this.collection = renamedCollection(this.collection, from, to);
+      this.notify(`Renamed to ${to}`);
+    });
+  }
+  /** Move every note in a collection and its subfolders to Trash. */
+  async deleteCollection(path: string) {
+    const notes = library.live.filter((n) => !n.inbox && inCollection(n.collection, path));
+    for (const note of notes) library.change(note.id, { trashed: true });
+    await this.afterSave(async () => {
+      if (this.collection && inCollection(this.collection, path)) await this.navigate(this.screen);
+      else this.#keepSelection();
+      this.notify(
+        `Moved ${notes.length} ${notes.length === 1 ? 'note' : 'notes'} to Trash. You can restore them anytime.`,
+      );
     });
   }
   /** When the open note leaves the current list, open the first note still in it. */
