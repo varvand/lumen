@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { collectionPath, collectionTree, inCollection } from './collections';
+import {
+  collectionPath,
+  collectionTree,
+  inCollection,
+  orderFolders,
+  renamedCollection,
+  reorderFolders,
+} from './collections';
 
 const note = (collection: string, patch = {}) => ({
   collection,
@@ -72,5 +79,43 @@ describe('collection folders', () => {
         note(' / '),
       ]),
     ).toEqual([]);
+  });
+});
+
+describe('collection order', () => {
+  const tree = collectionTree([
+    note('Art'),
+    note('Physics / Waves'),
+    note('Physics / Optics'),
+    note('Math'),
+  ]);
+  const names = (folders: { path: string }[]) => folders.map((folder) => folder.path);
+
+  it('follows the saved order and keeps new folders alphabetical after it', () => {
+    const ordered = orderFolders(tree, ['Physics', 'Physics / Waves']);
+    expect(names(ordered)).toEqual(['Physics', 'Art', 'Math']);
+    expect(names(ordered[0].children)).toEqual(['Physics / Waves', 'Physics / Optics']);
+  });
+
+  it('moves a folder before or after a sibling', () => {
+    const siblings = ['Art', 'Math', 'Physics'];
+    expect(reorderFolders([], siblings, 'Physics', 'Art', false)).toEqual([
+      'Physics',
+      'Art',
+      'Math',
+    ]);
+    expect(reorderFolders(['x'], siblings, 'Art', 'Math', true)).toEqual([
+      'x',
+      'Math',
+      'Art',
+      'Physics',
+    ]);
+    expect(reorderFolders([], siblings, 'Art', 'Physics / Waves', true)).toEqual([]);
+  });
+
+  it('renames a folder with its subfolders only', () => {
+    expect(renamedCollection('Physics/Waves', 'Physics', 'Science')).toBe('Science / Waves');
+    expect(renamedCollection('Physics', 'Physics', 'Science')).toBe('Science');
+    expect(renamedCollection('Physics advanced', 'Physics', 'Science')).toBe('Physics advanced');
   });
 });

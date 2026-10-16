@@ -51,3 +51,32 @@ export function collectionTree(notes: Pick<Note, 'collection' | 'inbox' | 'trash
   sort(roots);
   return roots;
 }
+
+/** Siblings follow the saved order; folders not in it keep their alphabetical place after. */
+export function orderFolders(folders: CollectionFolder[], order: string[]): CollectionFolder[] {
+  const rank = new Map(order.map((path, index) => [path, index]));
+  const position = (folder: CollectionFolder) => rank.get(folder.path) ?? Infinity;
+  return [...folders]
+    .sort((a, b) => position(a) - position(b) || a.name.localeCompare(b.name))
+    .map((folder) => ({ ...folder, children: orderFolders(folder.children, order) }));
+}
+
+/** Move `path` before or after `target` among `siblings`, returning the new saved order. */
+export function reorderFolders(
+  order: string[],
+  siblings: string[],
+  path: string,
+  target: string,
+  after: boolean,
+) {
+  if (path === target || !siblings.includes(path) || !siblings.includes(target)) return order;
+  const next = siblings.filter((item) => item !== path);
+  next.splice(next.indexOf(target) + (after ? 1 : 0), 0, path);
+  return [...order.filter((item) => !siblings.includes(item)), ...next];
+}
+
+/** The collection a value has once folder `from` is renamed to `to`, keeping subfolders. */
+export function renamedCollection(value: string, from: string, to: string) {
+  const path = collectionPath(value);
+  return inCollection(path, from) ? `${to}${path.slice(collectionPath(from).length)}` : value;
+}
