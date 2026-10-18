@@ -68,11 +68,16 @@ test('creates, edits, and deletes a custom theme', async ({ page }) => {
 test('discards an unsaved custom theme on cancel', async ({ page }) => {
   const settings = await openSettings(page);
   const before = await cssVar(page, '--accent');
+  // System plus every built-in (Liquid Glass included) and any saved custom
+  // themes; cancelling must bring back exactly this list, whatever it holds.
+  const radios = settings.getByRole('radio');
+  await expect(settings.getByRole('radio', { name: 'Liquid Glass' })).toHaveCount(1);
+  const themeCount = await radios.count();
   await settings.getByRole('button', { name: /New theme from/ }).click();
   await settings.getByLabel('Accent', { exact: true }).fill('#00ff00');
   await settings.getByRole('button', { name: 'Cancel' }).click();
   expect(await cssVar(page, '--accent')).toBe(before);
-  await expect(settings.getByRole('radio')).toHaveCount(9);
+  await expect(radios).toHaveCount(themeCount);
 });
 
 test('colors each tag differently when enabled in settings', async ({ page }) => {
