@@ -1,6 +1,8 @@
 import { BUILTIN_THEMES, resolveTheme, sanitizeTheme, type ThemeDefinition } from './themes';
 
 const KEY = 'lumen.preferences';
+/** Used on first run and whenever no known theme is saved. */
+const DEFAULT_THEME = 'liquid-glass';
 /** "system", a built-in theme id, or a custom theme id. */
 export type Theme = string;
 export type ReaderFont = 'serif' | 'sans';
@@ -11,7 +13,7 @@ const clampScale = (value: number) =>
 
 /** Visual preferences, kept per device in localStorage and never mixed with library data. */
 class Preferences {
-  theme = $state<Theme>('light');
+  theme = $state<Theme>(DEFAULT_THEME);
   customThemes = $state<ThemeDefinition[]>([]);
   readerFont = $state<ReaderFont>('serif');
   fontSize = $state(17);
@@ -39,7 +41,7 @@ class Preferences {
       this.customThemes = Array.isArray(prefs.customThemes)
         ? prefs.customThemes.map(sanitizeTheme).filter((t: ThemeDefinition | null) => t !== null)
         : [];
-      this.theme = this.isKnown(prefs.theme) ? prefs.theme : 'light';
+      this.theme = this.isKnown(prefs.theme) ? prefs.theme : DEFAULT_THEME;
       this.readerFont = prefs.readerFont === 'sans' ? 'sans' : 'serif';
       this.fontSize =
         typeof prefs.fontSize === 'number' ? Math.min(22, Math.max(14, prefs.fontSize)) : 17;

@@ -4,7 +4,9 @@ import { preferences } from './preferences.svelte';
 import { BUILTIN_THEMES, newThemeId, type ThemeDefinition } from './themes';
 
 const KEY = 'lumen.preferences';
-const [light, dark] = BUILTIN_THEMES;
+const light = BUILTIN_THEMES.find((t) => t.id === 'light')!;
+const dark = BUILTIN_THEMES.find((t) => t.id === 'dark')!;
+const glass = BUILTIN_THEMES.find((t) => t.id === 'liquid-glass')!;
 
 function stored() {
   return JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -36,11 +38,28 @@ beforeEach(() => {
 
 describe('preferences', () => {
   it('starts with defaults when nothing is stored', () => {
-    expect(preferences.theme).toBe('light');
+    expect(preferences.theme).toBe('liquid-glass');
     expect(preferences.customThemes).toEqual([]);
     expect(preferences.readerFont).toBe('serif');
     expect(preferences.fontSize).toBe(17);
-    expect(preferences.active).toBe(light);
+    expect(preferences.active).toBe(glass);
+    expect(preferences.active.glass).toBe(true);
+  });
+
+  it('keeps a saved theme instead of the new default', () => {
+    for (const theme of ['paper', 'dark', 'system', 'light']) {
+      localStorage.setItem(KEY, JSON.stringify({ theme }));
+      preferences.load();
+      expect(preferences.theme).toBe(theme);
+    }
+  });
+
+  it('keeps the glass design on a saved custom copy', () => {
+    const copy = custom({ glass: true });
+    preferences.saveCustomTheme(copy);
+    preferences.load();
+    expect(preferences.active.glass).toBe(true);
+    expect(custom().glass).toBeUndefined();
   });
 
   it('repairs invalid stored values', () => {
@@ -54,7 +73,7 @@ describe('preferences', () => {
       }),
     );
     preferences.load();
-    expect(preferences.theme).toBe('light');
+    expect(preferences.theme).toBe('liquid-glass');
     expect(preferences.readerFont).toBe('serif');
     expect(preferences.fontSize).toBe(22);
     expect(preferences.customThemes.map((t) => t.id)).toEqual(['custom-ok']);
@@ -126,7 +145,7 @@ describe('preferences', () => {
     expect(preferences.active).toEqual(theme);
     expect(stored().customThemes ?? []).toEqual([]);
     preferences.preview = null;
-    expect(preferences.active).toBe(light);
+    expect(preferences.active).toBe(glass);
   });
 
   it('keeps the interface text scale within bounds and remembers it', () => {
