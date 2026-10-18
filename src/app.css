@@ -3848,3 +3848,389 @@ svg.hovering .graph-link:not(.near) {
   max-width: 100%;
   height: auto;
 }
+
+/* Liquid Glass: a design, not only colors. Everything below is scoped to the marker that App.svelte
+   sets for themes with `glass`, so every other theme keeps its look. Colors still come from the
+   theme tokens; the layers add a black base with a faint warm light leak, frosted panels, and a
+   denser editor-first layout. */
+.app-shell[data-design='liquid-glass'] {
+  --glass: rgba(20, 20, 24, 0.6);
+  --glass-strong: rgba(16, 16, 20, 0.78);
+  --glass-line: rgba(255, 255, 255, 0.13);
+  --glass-edge:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 18px 50px -24px rgba(0, 0, 0, 0.8);
+  --glass-blur: blur(22px) saturate(150%);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 24px 80px #000a;
+  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  isolation: isolate;
+  background: #000;
+}
+/* Warm light leak from the upper left, a cool hint at the lower edge, and fine grain. It sits
+   behind everything (z-index -1 inside the shell's own stacking context) and ignores the pointer. */
+.app-shell[data-design='liquid-glass']::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.07'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 55% 60% at 6% 12%, rgba(255, 112, 64, 0.34), transparent 70%),
+    radial-gradient(ellipse 40% 45% at 0% 48%, rgba(214, 52, 62, 0.22), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 18% 100%, rgba(64, 104, 220, 0.18), transparent 70%),
+    radial-gradient(ellipse 30% 40% at 100% 100%, rgba(64, 104, 220, 0.09), transparent 70%), #000;
+}
+
+/* Frosted panels. */
+.app-shell[data-design='liquid-glass'] .sidebar,
+.app-shell[data-design='liquid-glass'] .note-list,
+.app-shell[data-design='liquid-glass'] .document-workspace,
+.app-shell[data-design='liquid-glass'] .graph-page,
+.app-shell[data-design='liquid-glass'] .practice-layout,
+.app-shell[data-design='liquid-glass'] .tutor,
+.app-shell[data-design='liquid-glass'] .details-panel,
+.app-shell[data-design='liquid-glass'] .pdf-reader {
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-edge);
+}
+/* The tutor and details panels sit inside a glass pane already; keep them flat so blurs don't stack. */
+.app-shell[data-design='liquid-glass'] .tutor,
+.app-shell[data-design='liquid-glass'] .details-panel,
+.app-shell[data-design='liquid-glass'] .pdf-reader {
+  background: var(--glass-strong);
+  border-width: 0 0 0 1px;
+  box-shadow: none;
+}
+.app-shell[data-design='liquid-glass'] .document-toolbar,
+.app-shell[data-design='liquid-glass'] .page-top,
+.app-shell[data-design='liquid-glass'] .graph-controls,
+.app-shell[data-design='liquid-glass'] .tutor-head {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.app-shell[data-design='liquid-glass'] .editor-content {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.app-shell[data-design='liquid-glass'] .note-list-scroll {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.app-shell[data-design='liquid-glass'] .practice-container {
+  min-width: 0;
+}
+.app-shell[data-design='liquid-glass'] .graph-page,
+.app-shell[data-design='liquid-glass'] .practice-layout {
+  overflow: hidden;
+}
+
+/* Controls: pills with a specular top edge. */
+.app-shell[data-design='liquid-glass'] .search-trigger,
+.app-shell[data-design='liquid-glass'] .list-controls,
+.app-shell[data-design='liquid-glass'] .editor-tabs,
+.app-shell[data-design='liquid-glass'] .secondary-button,
+.app-shell[data-design='liquid-glass'] .collection-choice,
+.app-shell[data-design='liquid-glass'] .tag {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--glass-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.app-shell[data-design='liquid-glass'] .search-trigger,
+.app-shell[data-design='liquid-glass'] .list-controls,
+.app-shell[data-design='liquid-glass'] .editor-tabs,
+.app-shell[data-design='liquid-glass'] .secondary-button,
+.app-shell[data-design='liquid-glass'] .primary-button,
+.app-shell[data-design='liquid-glass'] .collection-choice,
+.app-shell[data-design='liquid-glass'] .update-button {
+  border-radius: 999px;
+}
+.app-shell[data-design='liquid-glass'] .secondary-button:hover,
+.app-shell[data-design='liquid-glass'] .collection-choice:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+.app-shell[data-design='liquid-glass'] .editor-tabs button {
+  border-radius: 999px;
+}
+.app-shell[data-design='liquid-glass'] .editor-tabs button.chosen {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 1px 6px rgba(0, 0, 0, 0.4);
+}
+.app-shell[data-design='liquid-glass'] .primary-button {
+  color: #1a0d08;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 6px 18px -8px var(--accent);
+}
+.app-shell[data-design='liquid-glass'] .main-nav button {
+  border-radius: 999px;
+}
+.app-shell[data-design='liquid-glass'] .main-nav button.active,
+.app-shell[data-design='liquid-glass'] .folder-row.active {
+  background: rgba(255, 122, 89, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px rgba(255, 122, 89, 0.22);
+}
+.app-shell[data-design='liquid-glass'] .main-nav .accent-count {
+  background: rgba(255, 255, 255, 0.08);
+}
+.app-shell[data-design='liquid-glass'] .note-item.selected {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--glass-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.app-shell[data-design='liquid-glass'] .note-item:hover,
+.app-shell[data-design='liquid-glass'] .folder-row:hover,
+.app-shell[data-design='liquid-glass'] .main-nav button:hover,
+.app-shell[data-design='liquid-glass'] .icon-button:hover,
+.app-shell[data-design='liquid-glass'] .icon-button.pressed {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* Floating surfaces: menus, dialogs, toasts. */
+.app-shell[data-design='liquid-glass'] .menu,
+.app-shell[data-design='liquid-glass'] .link-suggestions,
+.app-shell[data-design='liquid-glass'] dialog {
+  background: rgba(22, 22, 27, 0.8);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-color: var(--glass-line);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    var(--shadow);
+}
+.app-shell[data-design='liquid-glass'] dialog {
+  border-radius: 20px;
+}
+.app-shell[data-design='liquid-glass'] dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+}
+.app-shell[data-design='liquid-glass'] .modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.app-shell[data-design='liquid-glass'] .form-field input,
+.app-shell[data-design='liquid-glass'] .form-field textarea,
+.app-shell[data-design='liquid-glass'] .code-command,
+.app-shell[data-design='liquid-glass'] .prompt-copy {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--glass-line);
+}
+.app-shell[data-design='liquid-glass'] .theme-options button {
+  border-color: var(--glass-line);
+  background: rgba(255, 255, 255, 0.03);
+}
+.app-shell[data-design='liquid-glass'] .theme-options button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.app-shell[data-design='liquid-glass'] .theme-options button.chosen {
+  background: rgba(255, 122, 89, 0.14);
+}
+.app-shell[data-design='liquid-glass'] .toast {
+  background: rgba(244, 242, 239, 0.94);
+  color: #111;
+}
+
+/* Reading and writing: glass insets for code and math, calmer line height. */
+.app-shell[data-design='liquid-glass'] .prose code,
+.app-shell[data-design='liquid-glass'] .prose pre,
+.app-shell[data-design='liquid-glass'] .prose .katex-display,
+.app-shell[data-design='liquid-glass'] .prose th {
+  background: rgba(255, 255, 255, 0.05);
+}
+.app-shell[data-design='liquid-glass'] .prose pre,
+.app-shell[data-design='liquid-glass'] .prose code {
+  border-color: var(--glass-line);
+}
+.app-shell[data-design='liquid-glass'] .prose pre {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.app-shell[data-design='liquid-glass'] .prose td,
+.app-shell[data-design='liquid-glass'] .prose th,
+.app-shell[data-design='liquid-glass'] .prose hr {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.app-shell[data-design='liquid-glass'] .prose {
+  line-height: 1.62;
+}
+.app-shell[data-design='liquid-glass'] .cm-content {
+  line-height: 1.75;
+}
+.app-shell[data-design='liquid-glass'] .cm-panels,
+.app-shell[data-design='liquid-glass'] .cm-tooltip {
+  background: var(--glass-strong);
+  border-color: var(--glass-line);
+}
+
+/* Graph and Practice. */
+.app-shell[data-design='liquid-glass'] .graph-node circle {
+  stroke: #000;
+}
+.app-shell[data-design='liquid-glass'] .graph-node text {
+  stroke: rgba(0, 0, 0, 0.85);
+}
+.app-shell[data-design='liquid-glass'] .graph-link {
+  stroke: rgba(255, 255, 255, 0.16);
+}
+.app-shell[data-design='liquid-glass'] .graph-link.near {
+  stroke: var(--accent);
+}
+
+/* Home keeps its calm, roomy layout: surfaces and type change, spacing does not. The sky band
+   gives way to the light leak behind the page. */
+.app-shell[data-design='liquid-glass'] .home-page {
+  background: transparent;
+}
+.app-shell[data-design='liquid-glass'] .home-cover {
+  background: none;
+}
+.app-shell[data-design='liquid-glass'] .home-cover::after {
+  background: none;
+}
+.app-shell[data-design='liquid-glass'] .home-card {
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-color: var(--glass-line);
+  border-radius: 20px;
+  box-shadow: var(--glass-edge);
+}
+.app-shell[data-design='liquid-glass'] .home-customize {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--glass-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.app-shell[data-design='liquid-glass'] .home-hint code {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Desktop layout: floating panels with a thin gap, and a denser editor-first arrangement.
+   Narrow widths keep the existing responsive layout. */
+@media (min-width: 801px) {
+  .app-shell[data-design='liquid-glass'] {
+    padding: 8px;
+    gap: 8px;
+  }
+  .app-shell[data-design='liquid-glass'] .sidebar,
+  .app-shell[data-design='liquid-glass'] .note-list,
+  .app-shell[data-design='liquid-glass'] .document-workspace,
+  .app-shell[data-design='liquid-glass'] .graph-page,
+  .app-shell[data-design='liquid-glass'] .practice-layout {
+    border-radius: 18px;
+  }
+  .app-shell[data-design='liquid-glass'] .sidebar {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: 12px;
+  }
+  .app-shell[data-design='liquid-glass']:not(.mac-titlebar) .sidebar {
+    padding-top: 20px;
+  }
+  .app-shell[data-design='liquid-glass'] .brand {
+    padding-bottom: 18px;
+  }
+  .app-shell[data-design='liquid-glass'] .main-nav {
+    margin-top: 16px;
+    gap: 2px;
+  }
+  .app-shell[data-design='liquid-glass'] .main-nav button {
+    padding: 8px 11px;
+  }
+  .app-shell[data-design='liquid-glass'] .collection-heading {
+    margin-top: 18px;
+    margin-bottom: 4px;
+  }
+  .app-shell[data-design='liquid-glass'] .folder-row {
+    min-height: 30px;
+    margin-top: 1px;
+    margin-bottom: 1px;
+  }
+  .app-shell[data-design='liquid-glass'] .folder-link {
+    padding: 6px 0;
+  }
+  .app-shell[data-design='liquid-glass'] .sidebar-bottom {
+    padding-top: 16px;
+  }
+  .app-shell[data-design='liquid-glass'] .list-title {
+    padding: 18px 16px 10px;
+  }
+  .app-shell[data-design='liquid-glass'] .list-controls {
+    margin: 0 10px 8px;
+    height: 30px;
+  }
+  .app-shell[data-design='liquid-glass'] .note-list-scroll {
+    padding: 6px;
+  }
+  .app-shell[data-design='liquid-glass'] .note-item {
+    padding: 11px 11px 9px;
+    margin-bottom: 3px;
+  }
+  .app-shell[data-design='liquid-glass'] .note-item h2 {
+    margin: 6px 0 4px;
+    line-height: 1.35;
+  }
+  .app-shell[data-design='liquid-glass'] .note-item p {
+    line-height: 1.5;
+  }
+  .app-shell[data-design='liquid-glass'] .note-item-bottom {
+    margin-top: 8px;
+  }
+  .app-shell[data-design='liquid-glass'] .document-toolbar {
+    height: 50px;
+    min-height: 50px;
+    padding: 0 16px;
+  }
+  .app-shell[data-design='liquid-glass'] .writing-surface {
+    padding: 28px clamp(20px, 4vw, 56px) 0;
+  }
+  .app-shell[data-design='liquid-glass'] .document-heading {
+    max-width: 800px;
+    padding-bottom: 18px;
+  }
+  .app-shell[data-design='liquid-glass'] .editor-content,
+  .app-shell[data-design='liquid-glass'] .format-toolbar {
+    max-width: 800px;
+  }
+  .app-shell[data-design='liquid-glass'] .editor-content.two-panes,
+  .app-shell[data-design='liquid-glass'] .split-mode .format-toolbar,
+  .app-shell[data-design='liquid-glass'] .split-mode .document-heading {
+    max-width: none;
+  }
+  .app-shell[data-design='liquid-glass'] .editor-content.two-panes {
+    gap: 20px;
+  }
+  .app-shell[data-design='liquid-glass'] .split-mode {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .app-shell[data-design='liquid-glass'] .preview-pane {
+    padding-top: 16px;
+  }
+  .app-shell[data-design='liquid-glass'] .page-top,
+  .app-shell[data-design='liquid-glass'] .graph-controls {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+@media (min-width: 1251px) {
+  .app-shell[data-design='liquid-glass']:not(.sidebar-collapsed) {
+    --sidebar-col: calc(176px * var(--ui-scale, 1));
+    --list-col: calc(212px * var(--ui-scale, 1));
+  }
+}
+@media (min-width: 1600px) {
+  .app-shell[data-design='liquid-glass']:not(.sidebar-collapsed) {
+    --sidebar-col: calc(184px * var(--ui-scale, 1));
+    --list-col: calc(236px * var(--ui-scale, 1));
+  }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .app-shell[data-design='liquid-glass'] {
+    --glass: rgba(20, 20, 24, 0.9);
+  }
+}

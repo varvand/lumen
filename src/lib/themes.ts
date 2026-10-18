@@ -24,6 +24,8 @@ export interface ThemeDefinition {
   dark: boolean;
   colors: ThemeColors;
   custom?: boolean;
+  /** Frosted-glass design: translucent panels over a black base, not only different colors. */
+  glass?: boolean;
 }
 
 export const TOKEN_LABELS: Record<Token, string> = {
@@ -81,6 +83,27 @@ export const BUILTIN_THEMES: ThemeDefinition[] = [
       'accent-soft': '#2e4033',
       selection: '#3d5443',
       danger: '#e1a093',
+    },
+  },
+  {
+    id: 'liquid-glass',
+    name: 'Liquid Glass',
+    dark: true,
+    glass: true,
+    colors: {
+      background: '#050505',
+      surface: '#121214',
+      sidebar: '#0a0a0c',
+      hover: '#222226',
+      text: '#f4f2ef',
+      secondary: '#bdb8b2',
+      muted: '#8f8a85',
+      border: '#2a2a2e',
+      accent: '#ff7a59',
+      'accent-strong': '#ff9e7a',
+      'accent-soft': '#3a1f17',
+      selection: '#4a2a1f',
+      danger: '#ff9a8b',
     },
   },
   {
@@ -205,13 +228,14 @@ export const BUILTIN_THEMES: ThemeDefinition[] = [
   },
 ];
 
-const [LIGHT, DARK] = BUILTIN_THEMES;
+const LIGHT = BUILTIN_THEMES.find((t) => t.id === 'light')!;
+const DARK = BUILTIN_THEMES.find((t) => t.id === 'dark')!;
 const HEX = /^#[0-9a-f]{6}$/i;
 
 /** Rebuild a stored custom theme, dropping it if it is unusable and filling any missing colors. */
 export function sanitizeTheme(value: unknown): ThemeDefinition | null {
   if (!value || typeof value !== 'object') return null;
-  const { id, name, dark, colors } = value as Record<string, unknown>;
+  const { id, name, dark, colors, glass } = value as Record<string, unknown>;
   if (typeof id !== 'string' || !id.startsWith('custom-')) return null;
   const base = dark === true ? DARK : LIGHT;
   const stored = colors && typeof colors === 'object' ? (colors as Record<string, unknown>) : {};
@@ -227,6 +251,7 @@ export function sanitizeTheme(value: unknown): ThemeDefinition | null {
     dark: dark === true,
     colors: sanitized,
     custom: true,
+    ...(glass === true && { glass: true }),
   };
 }
 

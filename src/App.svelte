@@ -149,6 +149,7 @@
   class:list-collapsed={ui.listCollapsed}
   class:colorful-tags={preferences.colorfulTags}
   data-theme={preferences.active.dark ? 'dark' : 'light'}
+  data-design={preferences.active.glass ? 'liquid-glass' : undefined}
   data-reader={preferences.readerFont}
   style={`--reader-size: ${preferences.fontSize}px; --ui-scale: ${preferences.uiScale}; ${themeStyle(preferences.active)}`}
 >
