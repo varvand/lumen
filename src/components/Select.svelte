@@ -100,8 +100,27 @@
     const upward = element.offsetHeight > below && above > below;
     element.style.maxHeight = `${Math.max(0, upward ? above : below)}px`;
     const left = compact ? rect.right - element.offsetWidth : rect.left;
-    element.style.left = `${Math.max(margin, Math.min(left, window.innerWidth - element.offsetWidth - margin))}px`;
-    element.style.top = `${upward ? rect.top - gap - element.offsetHeight : rect.bottom + gap}px`;
+    const top = upward ? rect.top - gap - element.offsetHeight : rect.bottom + gap;
+    // Clamp both axes into the viewport, as the context menus do, so a menu that
+    // opens upward (or is taller than the space below) never spills past the edge.
+    const clampedLeft = Math.max(
+      margin,
+      Math.min(left, window.innerWidth - element.offsetWidth - margin),
+    );
+    const clampedTop = Math.max(
+      margin,
+      Math.min(top, window.innerHeight - element.offsetHeight - margin),
+    );
+    element.style.left = `${clampedLeft}px`;
+    element.style.top = `${clampedTop}px`;
+    // Liquid Glass gives the dialog a backdrop-filter, which makes it (not the
+    // viewport) the containing block for this fixed menu — scroll included — so
+    // viewport coordinates land offset by the dialog's position. Measure where
+    // the menu actually landed and shift it back onto the clamped position;
+    // this is a no-op when the viewport really is the containing block.
+    const landed = element.getBoundingClientRect();
+    element.style.left = `${clampedLeft + (clampedLeft - landed.left)}px`;
+    element.style.top = `${clampedTop + (clampedTop - landed.top)}px`;
 
     const outside = (event: Event) => {
       if (
