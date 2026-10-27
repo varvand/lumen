@@ -13,20 +13,27 @@ async function openApp(page: Page, { attached = false, citing = false, file = PD
       const win = window as unknown as {
         isTauri: boolean;
         __TAURI_INTERNALS__: unknown;
-        pdfTest: { saved: { name: string; pages: string[] }[] };
+        pdfTest: {
+          saved: { name: string; pages: string[] }[];
+          dropped: { name: string; size: number }[];
+        };
       };
       const attachment = { name, size: pdf.length, addedAt: 1 };
       const list = attached ? [attachment] : [];
       const texts: unknown[] = [];
       win.isTauri = true;
-      win.pdfTest = { saved: [] };
+      win.pdfTest = { saved: [], dropped: [] };
       let revision = 0;
       let callback = 0;
       win.__TAURI_INTERNALS__ = {
         metadata: { currentWindow: { label: 'main' }, currentWebview: { label: 'main' } },
         transformCallback: () => ++callback,
         unregisterCallback: () => {},
-        invoke: async (command: string, args: Record<string, never>) => {
+        invoke: async (
+          command: string,
+          args: Record<string, never>,
+          options?: { headers?: Record<string, string> },
+        ) => {
           if (command === 'load_library') {
             const notes = [...args.seeds] as { id: string; title: string; body: string }[];
             if (citing)
@@ -44,6 +51,15 @@ async function openApp(page: Page, { attached = false, citing = false, file = PD
           if (command === 'list_attachments') return list;
           if (command === 'plugin:dialog|open') return `/Users/test/Downloads/${name}`;
           if (command === 'add_attachment') {
+            if (!list.length) list.push(attachment);
+            return attachment;
+          }
+          if (command === 'add_attachment_bytes') {
+            const bytes = args as unknown as Uint8Array;
+            win.pdfTest.dropped.push({
+              name: decodeURIComponent(options?.headers?.name ?? ''),
+              size: bytes.length,
+            });
             if (!list.length) list.push(attachment);
             return attachment;
           }
@@ -199,4 +215,139 @@ test('draws images that need PDF.js decoders, under the desktop app security pol
     )
     .toBe(true);
   expect(blocked).toEqual([]);
+});
+
+/** Drop files on the editor at the middle of a line, as dragging from Finder would. */
+async function dropFiles(
+  page: Page,
+  files: { name: string; type: string; bytes: number[] }[],
+  line: number,
+  { release = true } = {},
+) {
+  const target = page
+    .getByRole('textbox', { name: 'Markdown editor' })
+    .locator('.cm-line')
+    .nth(line);
+  const box = (await target.boundingBox())!;
+  await page.evaluate(
+    ({ files, x, y, release }) => {
+      const transfer = new DataTransfer();
+      for (const f of files)
+        transfer.items.add(new File([new Uint8Array(f.bytes)], f.name, { type: f.type }));
+      const at = document.elementFromPoint(x, y)!;
+      const fire = (type: string) =>
+        at.dispatchEvent(
+          new DragEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: transfer,
+            clientX: x,
+            clientY: y,
+          }),
+        );
+      fire('dragenter');
+      fire('dragover');
+      if (release) fire('drop');
+    },
+    { files, x: box.x + 4, y: box.y + box.height / 2, release },
+  );
+}
+
+async function writeThreeParagraphs(page: Page) {
+  await page.getByRole('button', { name: 'New note' }).click();
+  await page.getByRole('textbox', { name: 'Note title' }).fill('Dropping');
+  const editor = page.getByRole('textbox', { name: 'Markdown editor' });
+  await editor.click();
+  await page.keyboard.insertText('First paragraph.\n\nSecond paragraph.\n\nThird paragraph.');
+  return editor;
+}
+
+const pdfFile = () => ({ name: PDF, type: 'application/pdf', bytes: fixture(PDF) });
+
+test('drops a PDF onto a note and embeds it where it landed, like the Attach button', async ({
+  page,
+}) => {
+  await openApp(page);
+  const editor = await writeThreeParagraphs(page);
+
+  // While a PDF is dragged over the note, the note shows where it will go.
+  await dropFiles(page, [pdfFile()], 2, { release: false });
+  await expect(editor.locator('xpath=ancestor::div[contains(@class,"cm-editor")]')).toHaveClass(
+    /cm-pdf-drop/,
+  );
+
+  await dropFiles(page, [pdfFile()], 2);
+  await expect(editor.locator('xpath=ancestor::div[contains(@class,"cm-editor")]')).not.toHaveClass(
+    /cm-pdf-drop/,
+  );
+  // The embed lands after the second paragraph, between it and the third.
+  await expect(editor).toContainText(`![[${PDF}]]`);
+  expect(((await editor.innerText()).match(/\S[^\n]*/g) ?? []).filter(Boolean)).toEqual([
+    'First paragraph.',
+    'Second paragraph.',
+    `![[${PDF}]]`,
+    'Third paragraph.',
+  ]);
+  // The bytes went to the library under the file's name, and the reader opened like the button does.
+  expect(
+    await page.evaluate(
+      () => (window as never as { pdfTest: { dropped: unknown[] } }).pdfTest.dropped,
+    ),
+  ).toEqual([{ name: PDF, size: fixture(PDF).length }]);
+  const reader = page.getByRole('complementary', { name: 'PDF reader' });
+  await expect(reader.getByTitle(PDF)).toBeVisible();
+  await expect(page.getByText(`Added ${PDF}`)).toBeVisible();
+});
+
+test('ignores dropped files that are not PDFs and keeps dragging text inside the note', async ({
+  page,
+}) => {
+  await openApp(page);
+  const editor = await writeThreeParagraphs(page);
+  await dropFiles(page, [{ name: 'photo.png', type: 'image/png', bytes: [1, 2, 3] }], 0);
+  await expect(editor).not.toContainText('![[');
+  expect(
+    await page.evaluate(
+      () => (window as never as { pdfTest: { dropped: unknown[] } }).pdfTest.dropped,
+    ),
+  ).toEqual([]);
+  await expect(page.getByRole('complementary', { name: 'PDF reader' })).toHaveCount(0);
+
+  // Text dragged within the note is still the editor's to place.
+  const last = (await editor.locator('.cm-line').last().boundingBox())!;
+  await page.evaluate(
+    ({ x, y }) => {
+      const transfer = new DataTransfer();
+      transfer.setData('text/plain', 'MOVED TEXT');
+      const at = document.elementFromPoint(x, y)!;
+      for (const type of ['dragover', 'drop'])
+        at.dispatchEvent(
+          new DragEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: transfer,
+            clientX: x,
+            clientY: y,
+          }),
+        );
+    },
+    { x: last.x + 4, y: last.y + last.height / 2 },
+  );
+  await expect(editor).toContainText('MOVED TEXT');
+  await expect(editor).not.toContainText('![[');
+});
+
+test('tells the browser build that PDFs attach in the desktop app, instead of opening the file', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'New note' }).click();
+  const editor = page.getByRole('textbox', { name: 'Markdown editor' });
+  await editor.click();
+  await page.keyboard.insertText('Plain note.');
+  const url = page.url();
+  await dropFiles(page, [pdfFile()], 0);
+  await expect(page.getByText('PDFs can be attached in the desktop app.')).toBeVisible();
+  await expect(editor).not.toContainText('![[');
+  expect(page.url()).toBe(url);
 });

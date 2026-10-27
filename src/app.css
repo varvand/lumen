@@ -1075,6 +1075,39 @@ button:disabled:hover {
   border: none;
   font-size: inherit;
 }
+.prose .diagram,
+.cm-lp-diagram {
+  margin: 23px 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  text-align: center;
+}
+.diagram.diagram-pending {
+  min-height: 72px;
+}
+.diagram > svg {
+  max-width: 100%;
+  height: auto;
+}
+.diagram-error {
+  text-align: left;
+}
+.diagram-message {
+  color: var(--danger);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.diagram-error pre {
+  margin: 0;
+}
+.app-shell[data-design='liquid-glass'] .diagram {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--glass-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
 .prose .katex {
   font-size: 1.06em;
 }

@@ -4,6 +4,7 @@ import { StateField, type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view';
 import { isEmbeddedImage } from './images';
 import { mathSpans } from './math';
+import { isDiagramLanguage, mountDiagram } from './flowchart';
 
 /** Rendered $…$ or $$…$$, shown where its source is hidden. */
 class MathWidget extends WidgetType {
@@ -55,6 +56,28 @@ class ImageWidget extends WidgetType {
     image.alt = this.alt;
     image.className = 'cm-lp-image';
     return image;
+  }
+}
+
+/** A ```mermaid block drawn as a diagram, until the cursor enters it. */
+class DiagramWidget extends WidgetType {
+  constructor(readonly source: string) {
+    super();
+  }
+  eq(other: DiagramWidget) {
+    return other.source === this.source;
+  }
+  get estimatedHeight() {
+    return 160;
+  }
+  toDOM(view: EditorView) {
+    const dom = document.createElement('div');
+    dom.className = 'diagram cm-lp-diagram';
+    void mountDiagram(dom, this.source).then(() => view.requestMeasure());
+    return dom;
+  }
+  ignoreEvent() {
+    return false;
   }
 }
 
@@ -143,6 +166,21 @@ function build(state: EditorState): DecorationSet {
   tree.iterate({
     enter: (node) => {
       const { from, to, name } = node;
+      if (name === 'FencedCode' && !isActive(from, to)) {
+        const info = node.node.getChild('CodeInfo');
+        const marks = node.node.getChildren('CodeMark');
+        // Only a closed block is drawn, so a diagram never appears while its fence is being typed.
+        if (info && isDiagramLanguage(doc.sliceString(info.from, info.to)) && marks.length >= 2) {
+          const text = node.node.getChild('CodeText');
+          decorations.push(
+            Decoration.replace({
+              widget: new DiagramWidget(text ? doc.sliceString(text.from, text.to) : ''),
+              block: true,
+            }).range(from, to),
+          );
+          return false;
+        }
+      }
       if (name === 'FencedCode' || name === 'CodeBlock') {
         for (let n = doc.lineAt(from).number; n <= doc.lineAt(to).number; n++)
           decorations.push(line('cm-lp-code-block').range(doc.line(n).from));
@@ -274,6 +312,7 @@ export function livePreview() {
         cursor: 'pointer',
         accentColor: 'var(--accent)',
       },
+      '.cm-lp-diagram': { padding: '8px 0' },
       '.cm-lp-math': { fontFamily: 'initial' },
       '.cm-lp-math-display': { padding: '6px 0', textAlign: 'center', overflowX: 'auto' },
       '.cm-lp-math-error': { color: 'var(--muted)' },
