@@ -4,7 +4,7 @@ import { storage } from './storage';
 import { inCollection, renamedCollection } from './collections';
 import { attachments } from './attachments.svelte';
 import { isPdfTarget, pdfName, pdfPage } from './pdf';
-import type { Note, Prompt, Screen } from './types';
+import type { Attachment, Note, Prompt, Screen } from './types';
 
 export type Modal = 'capture' | 'settings' | 'search' | 'question' | 'obsidian' | null;
 export type EditorMode = 'write' | 'split' | 'read';
@@ -224,11 +224,22 @@ class Workspace {
     this.change({ body: `${body}${body ? '\n\n' : ''}${markdown}\n` });
   }
   /** Copy PDFs into the library, embed them in the open note, and show the first. */
-  async attachPdf() {
+  attachPdf() {
+    return this.embedPdfs(() => attachments.pick());
+  }
+  /** Do the same for PDF files dropped onto the note, placing the embeds with `place`. */
+  async dropPdfs(files: File[], place?: (markdown: string) => void) {
+    if (!attachments.enabled) return this.notify('PDFs can be attached in the desktop app.');
+    return this.embedPdfs(() => attachments.addFiles(files), place);
+  }
+  private async embedPdfs(
+    add: () => Promise<Attachment[]>,
+    place: (markdown: string) => void = (markdown) => this.insert(markdown),
+  ) {
     try {
-      const added = await attachments.pick();
+      const added = await add();
       if (!added.length) return;
-      this.insert(added.map((a) => `![[${a.name}]]`).join('\n\n'));
+      place(added.map((a) => `![[${a.name}]]`).join('\n\n'));
       this.reader = { name: added[0].name, page: 1 };
       this.notify(added.length === 1 ? `Added ${added[0].name}` : `Added ${added.length} PDFs`);
     } catch (e) {

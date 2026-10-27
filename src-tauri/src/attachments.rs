@@ -105,15 +105,22 @@ impl Store {
             return Err("This PDF is larger than 300 MB.".into());
         }
         let bytes = fs::read(source).map_err(err)?;
+        let wanted = source
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        self.add_attachment_bytes(&wanted, &bytes)
+    }
+
+    /// Save PDF bytes (such as a file dropped onto a note) in the library under a free name.
+    pub fn add_attachment_bytes(&mut self, filename: &str, bytes: &[u8]) -> Result<Attachment> {
+        if bytes.len() as u64 > MAX_PDF_BYTES {
+            return Err("This PDF is larger than 300 MB.".into());
+        }
         if !bytes.starts_with(b"%PDF-") {
             return Err("This file is not a PDF.".into());
         }
-        let wanted = clean_name(
-            &source
-                .file_name()
-                .map(|n| n.to_string_lossy().into_owned())
-                .unwrap_or_default(),
-        );
+        let wanted = clean_name(filename);
         let dir = self.attachments_dir();
         fs::create_dir_all(&dir).map_err(err)?;
         for n in 1..10_000 {
@@ -124,7 +131,7 @@ impl Store {
             let path = dir.join(&name);
             match fs::symlink_metadata(&path) {
                 Err(_) => {
-                    atomic_write(&path, &bytes)?;
+                    atomic_write(&path, bytes)?;
                     return self.attachment(&name);
                 }
                 Ok(existing)
@@ -278,6 +285,22 @@ mod tests {
             store.read_attachment("Lecture 2.pdf").unwrap(),
             b"%PDF-1.4\ntwo"
         );
+    }
+
+    #[test]
+    fn saves_dropped_bytes_under_a_clean_name() {
+        let library = tempfile::tempdir().unwrap();
+        let mut store = Store::open(library.path()).unwrap();
+        let added = store
+            .add_attachment_bytes("Lecture notes", b"%PDF-1.4\ndropped")
+            .unwrap();
+        assert_eq!(added.name, "Lecture notes.pdf");
+        let again = store
+            .add_attachment_bytes("Lecture notes.pdf", b"%PDF-1.4\ndropped")
+            .unwrap();
+        assert_eq!(again.name, "Lecture notes.pdf");
+        assert!(store.add_attachment_bytes("x.pdf", b"nope").is_err());
+        assert_eq!(store.attachments().unwrap().len(), 1);
     }
 
     #[test]

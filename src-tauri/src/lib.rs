@@ -20,6 +20,29 @@ mod desktop {
     use std::path::PathBuf;
     use std::sync::Mutex;
 
+    /// Decode the %XX escapes of a header value (the name is sent URI-encoded to stay ASCII).
+    fn urlencoding_decode(value: &str) -> String {
+        let bytes = value.as_bytes();
+        let mut out = Vec::with_capacity(bytes.len());
+        let mut i = 0;
+        while i < bytes.len() {
+            let hex = (bytes[i] == b'%' && i + 2 < bytes.len())
+                .then(|| value.get(i + 1..i + 3).and_then(|h| u8::from_str_radix(h, 16).ok()))
+                .flatten();
+            match hex {
+                Some(byte) => {
+                    out.push(byte);
+                    i += 3;
+                }
+                None => {
+                    out.push(bytes[i]);
+                    i += 1;
+                }
+            }
+        }
+        String::from_utf8_lossy(&out).into_owned()
+    }
+
     /// One SQLite connection for the window's lifetime. It is opened on first use, so an
     /// unreadable library surfaces as a recoverable error in the UI instead of a startup
     /// panic, and a failed open is retried on the next command.
@@ -57,6 +80,23 @@ mod desktop {
     #[tauri::command(async)]
     fn add_attachment(state: tauri::State<AppState>, path: String) -> Result<Attachment> {
         state.with_store(|s| s.add_attachment(&PathBuf::from(path)))
+    }
+    /// A PDF dropped onto a note arrives as raw bytes, with its file name in the `name` header.
+    #[tauri::command(async)]
+    fn add_attachment_bytes(
+        state: tauri::State<AppState>,
+        request: tauri::ipc::Request<'_>,
+    ) -> Result<Attachment> {
+        let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+            return Err("Expected the PDF's bytes.".into());
+        };
+        let name = request
+            .headers()
+            .get("name")
+            .and_then(|v| v.to_str().ok())
+            .map(urlencoding_decode)
+            .unwrap_or_default();
+        state.with_store(|s| s.add_attachment_bytes(&name, bytes))
     }
     #[tauri::command(async)]
     fn list_attachments(state: tauri::State<AppState>) -> Result<Vec<Attachment>> {
@@ -105,6 +145,7 @@ mod desktop {
                 record_attempt,
                 export_markdown,
                 add_attachment,
+                add_attachment_bytes,
                 list_attachments,
                 read_attachment,
                 pdf_texts,

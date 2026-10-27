@@ -18,6 +18,7 @@
   import { mathPreview } from '../lib/math';
   import { imageInput } from '../lib/images';
   import { ui } from '../lib/ui.svelte';
+  import { pdfDrop } from '../lib/pdfDrop';
   import { linkCompletion } from '../lib/linkCompletion';
 
   let {
@@ -48,11 +49,16 @@
     });
     view.focus();
   }
-  /** Insert Markdown as its own paragraph after the cursor's line, and put the cursor after it. */
-  export function insertBlock(markdown: string) {
+  /** Insert Markdown as its own paragraph after the cursor's (or a position's) line, and put the cursor after it. */
+  export function insertBlock(markdown: string, at?: number) {
     if (!view) return;
     const { doc } = view.state;
-    const line = placedCursor ? doc.lineAt(view.state.selection.main.head) : doc.line(doc.lines);
+    const line =
+      at !== undefined
+        ? doc.lineAt(Math.min(at, doc.length))
+        : placedCursor
+          ? doc.lineAt(view.state.selection.main.head)
+          : doc.line(doc.lines);
     const before = line.text.trim() ? '\n\n' : line.number > 1 ? '\n' : '';
     const insert = `${before}${markdown}\n`;
     view.dispatch({
@@ -74,6 +80,11 @@
           linkCompletion(() => linkTitles()),
           history(),
           imageInput((message) => ui.notify(message)),
+          pdfDrop((files, place) => {
+            void ui
+              .dropPdfs(files, (markdown) => insertBlock(markdown, place.pos))
+              .finally(place.release);
+          }),
           drawSelection(),
           highlightActiveLine(),
           highlightSelectionMatches(),
@@ -131,6 +142,12 @@
             '.cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, ::selection':
               { backgroundColor: 'var(--selection)' },
             '.cm-cursor': { borderLeftColor: 'var(--accent)' },
+            '&.cm-pdf-drop': {
+              outline: '2px dashed var(--accent)',
+              outlineOffset: '-4px',
+              backgroundColor: 'var(--accent-soft)',
+            },
+            '.cm-dropCursor': { borderLeftColor: 'var(--accent)' },
             '.cm-placeholder': { color: 'var(--muted)' },
             '.cm-panels': {
               background: 'var(--surface)',

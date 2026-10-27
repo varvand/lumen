@@ -1,8 +1,18 @@
 <script lang="ts">
-  import { TextB, TextItalic, Code, Link, ListBullets, Sigma, FilePdf } from 'phosphor-svelte';
+  import {
+    TextB,
+    TextItalic,
+    Code,
+    Link,
+    ListBullets,
+    Sigma,
+    FilePdf,
+    FlowArrow,
+  } from 'phosphor-svelte';
   import type Editor from './Editor.svelte';
   import { attachments } from '../lib/attachments.svelte';
   import { ui } from '../lib/ui.svelte';
+  import { FLOWCHART_TEMPLATE } from '../lib/flowchart';
   let { editor }: { editor: Editor | undefined } = $props();
 </script>
 
@@ -43,6 +53,11 @@
     title="LaTeX equation"
     onclick={() => editor?.format('$$\n', '\n$$', '\\sum_{i=1}^{n} x_i')}
     ><Sigma size={18} /></button
+  ><button
+    class="icon-button"
+    aria-label="Insert flowchart"
+    title="Flowchart"
+    onclick={() => ui.insert(FLOWCHART_TEMPLATE)}><FlowArrow size={17} /></button
   >{#if attachments.enabled}<span class="toolbar-divider"></span><button
       class="icon-button"
       aria-label="Attach PDF"
