@@ -59,6 +59,25 @@ class Attachments {
     if (added.length) await this.load();
     return added;
   }
+  /** Copy PDFs the user dropped (as files, not paths) into the library. */
+  async addFiles(files: File[]): Promise<Attachment[]> {
+    if (!native) return [];
+    const added: Attachment[] = [];
+    try {
+      for (const file of files) {
+        // The bytes travel raw, with the name in a header, so a large PDF is not turned into JSON.
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        added.push(
+          await invoke<Attachment>('add_attachment_bytes', bytes, {
+            headers: { name: encodeURIComponent(file.name) },
+          }),
+        );
+      }
+    } finally {
+      if (added.length) await this.load();
+    }
+    return added;
+  }
   /** A PDF's bytes, from the few most recently opened or from disk. */
   bytes(name: string) {
     let pending = this.#bytes.get(name);
